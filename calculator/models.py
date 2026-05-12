@@ -16,7 +16,7 @@ class MotorCalculation(models.Model):
 
     # ── Calculation inputs ────────────────────────────────────────────────────
     crane_torque_max = models.FloatField()
-    crane_torque_nom = models.FloatField()
+    crane_torque_nom = models.FloatField(null=True, blank=True)
     worm_ratio = models.FloatField()
     worm_efficiency = models.FloatField()
     motor_speed = models.FloatField()

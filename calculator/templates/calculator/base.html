@@ -103,8 +103,8 @@
 {# ══════════════ SIDEBAR ══════════════ #}
 <nav id="sidebar">
   <div class="sidebar-brand">
-    <span><i class="bi bi-gear-wide-connected me-1"></i> Slewing Calc</span>
-    Palfinger Marine · BU Wind
+    <span><i class="bi bi-gear-wide-connected me-1"></i> Slewing Gear Motor</span>
+    PF Crane
   </div>
 
   <div class="sidebar-section">Navigation</div>
@@ -123,9 +123,16 @@
     <span class="badge bg-secondary ms-1" style="font-size:.6rem">{{ sidebar_calculations|length }}</span>
   </div>
 
-  <a href="{% url 'suppliers' %}"
-     class="sidebar-link {% if active_page == 'suppliers' and not request.resolver_match.kwargs.pk %}active{% endif %}">
-    <i class="bi bi-list-ul"></i> All Suppliers
+  <a href="{% url 'suppliers_standard_pf' %}"
+     class="sidebar-link {% if crane_filter == 'standard_pf' %}active{% endif %}">
+    <i class="bi bi-crane"></i> Standard PF Crane
+    <span class="badge bg-secondary ms-auto" style="font-size:.6rem">{{ sidebar_standard_count }}</span>
+  </a>
+
+  <a href="{% url 'suppliers_pf_xxl' %}"
+     class="sidebar-link {% if crane_filter == 'pf_xxl' %}active{% endif %}">
+    <i class="bi bi-arrows-fullscreen"></i> PF-XXL
+    <span class="badge bg-secondary ms-auto" style="font-size:.6rem">{{ sidebar_xxl_count }}</span>
   </a>
 
   {% for sc in sidebar_calculations %}

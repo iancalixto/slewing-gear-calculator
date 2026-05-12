@@ -2,11 +2,34 @@
 
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Saved Suppliers</h5>
+  <h5 class="mb-0">
+    <i class="bi bi-list-ul me-2"></i>
+    {% if crane_filter == 'standard_pf' %}Standard PF Crane — Suppliers
+    {% elif crane_filter == 'pf_xxl' %}PF-XXL — Suppliers
+    {% else %}All Saved Suppliers{% endif %}
+  </h5>
   <a href="{% url 'index' %}" class="btn btn-primary btn-sm">
     <i class="bi bi-plus-lg me-1"></i>New Calculation
   </a>
 </div>
+
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item">
+    <a class="nav-link {% if not crane_filter %}active{% endif %}" href="{% url 'suppliers' %}">
+      All
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if crane_filter == 'standard_pf' %}active{% endif %}" href="{% url 'suppliers_standard_pf' %}">
+      <i class="bi bi-crane me-1"></i>Standard PF Crane
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if crane_filter == 'pf_xxl' %}active{% endif %}" href="{% url 'suppliers_pf_xxl' %}">
+      <i class="bi bi-arrows-fullscreen me-1"></i>PF-XXL
+    </a>
+  </li>
+</ul>
 
 {% if calculations %}
 <div class="card shadow-sm">

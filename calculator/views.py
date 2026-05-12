@@ -35,7 +35,7 @@ def index(request):
             d = form.cleaned_data
             results = drivetrain_sizing(
                 crane_torque_max=d['crane_torque_max'],
-                crane_torque_nom=d['crane_torque_nom'],
+                crane_torque_nom=d.get('crane_torque_nom'),
                 worm_ratio=d['worm_ratio'],
                 worm_efficiency=d['worm_efficiency'],
                 motor_speed=d['motor_speed'],
@@ -70,7 +70,7 @@ def save_calculation(request):
         d = calc_form.cleaned_data
         results = drivetrain_sizing(
             crane_torque_max=d['crane_torque_max'],
-            crane_torque_nom=d['crane_torque_nom'],
+            crane_torque_nom=d.get('crane_torque_nom'),
             worm_ratio=d['worm_ratio'],
             worm_efficiency=d['worm_efficiency'],
             motor_speed=d['motor_speed'],
@@ -88,7 +88,7 @@ def save_calculation(request):
             supplier_name=save_form.cleaned_data['supplier_name'],
             crane_type=save_form.cleaned_data['crane_type'],
             crane_torque_max=d['crane_torque_max'],
-            crane_torque_nom=d['crane_torque_nom'],
+            crane_torque_nom=d.get('crane_torque_nom'),
             worm_ratio=d['worm_ratio'],
             worm_efficiency=d['worm_efficiency'],
             motor_speed=d['motor_speed'],
@@ -124,11 +124,16 @@ def save_calculation(request):
     })
 
 
-def suppliers(request):
-    calculations = MotorCalculation.objects.all()
+def suppliers(request, crane_filter=None):
+    qs = MotorCalculation.objects.all()
+    if crane_filter == 'standard_pf':
+        qs = qs.filter(crane_type=MotorCalculation.STANDARD_PF)
+    elif crane_filter == 'pf_xxl':
+        qs = qs.filter(crane_type=MotorCalculation.PF_XXL)
     return render(request, 'calculator/suppliers.html', {
-        'calculations': calculations,
+        'calculations': qs,
         'active_page': 'suppliers',
+        'crane_filter': crane_filter,
     })
 
 

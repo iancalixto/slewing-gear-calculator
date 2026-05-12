@@ -96,8 +96,8 @@
           </thead>
           <tbody>
             <tr><td><span class="step-badge">1</span></td><td>Worm shaft torque (max)</td><td>{% latexify "M_{2,\\max}" math_inline=True %}</td><td class="text-end font-monospace">{{ results.worm_input_torque_max }}</td><td>Nm</td></tr>
-            <tr><td><span class="step-badge">2</span></td><td>Worm shaft torque (nom)</td><td>{% latexify "M_{2,\\text{nom}}" math_inline=True %}</td><td class="text-end font-monospace">{{ results.worm_input_torque_nom }}</td><td>Nm</td></tr>
-            <tr><td><span class="step-badge">3</span></td><td>Required gearbox torque</td><td>{% latexify "M_{\\text{gear,req}}" math_inline=True %}</td><td class="text-end font-monospace">{{ results.gearbox_required_torque }}</td><td>Nm</td></tr>
+            <tr><td><span class="step-badge">2</span></td><td>Worm shaft torque (nom)</td><td>{% latexify "M_{2,\\text{nom}}" math_inline=True %}</td><td class="text-end font-monospace">{% if results.worm_input_torque_nom is not None %}{{ results.worm_input_torque_nom }}{% else %}<span class="text-muted">N/A</span>{% endif %}</td><td>Nm</td></tr>
+            <tr><td><span class="step-badge">3</span></td><td>Required gearbox torque</td><td>{% latexify "M_{\\text{gear,req}}" math_inline=True %}</td><td class="text-end font-monospace">{% if results.gearbox_required_torque is not None %}{{ results.gearbox_required_torque }}{% else %}<span class="text-muted">N/A</span>{% endif %}</td><td>Nm</td></tr>
             <tr><td><span class="step-badge">4</span></td><td>Bevel gearbox ratio</td><td>{% latexify "i_{\\text{bevel}}" math_inline=True %}</td><td class="text-end font-monospace">{{ results.bevel_ratio }}</td><td>—</td></tr>
             <tr><td><span class="step-badge">5</span></td><td>Slewing speed</td><td>{% latexify "n_{\\text{slew}}" math_inline=True %}</td><td class="text-end font-monospace">{{ results.slewing_speed_rpm }}</td><td>rpm</td></tr>
             <tr><td><span class="step-badge">6</span></td><td>Motor torque required</td><td>{% latexify "M_{\\text{motor,req}}" math_inline=True %}</td><td class="text-end font-monospace">{{ results.motor_torque_required }}</td><td>Nm</td></tr>

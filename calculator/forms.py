@@ -14,9 +14,10 @@ class DrivetrainForm(forms.Form):
         widget=forms.NumberInput(attrs={**FLOAT_WIDGET, 'placeholder': 'e.g. 62000'}),
     )
     crane_torque_nom = forms.FloatField(
-        label='Nominal torque M_Nenn (Nm)',
+        label='Nominal torque M_Nenn (Nm) — optional',
+        required=False,
         min_value=0,
-        widget=forms.NumberInput(attrs={**FLOAT_WIDGET, 'placeholder': 'e.g. 23120'}),
+        widget=forms.NumberInput(attrs={**FLOAT_WIDGET_OPT, 'placeholder': 'e.g. 23120 (for gearbox sizing)'}),
     )
 
     # ── Worm gear ────────────────────────────────────────────────────────────

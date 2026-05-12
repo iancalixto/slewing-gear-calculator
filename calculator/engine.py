@@ -41,13 +41,13 @@ def _ratio_check(value, calculated, label):
 
 def drivetrain_sizing(
     crane_torque_max,
-    crane_torque_nom,
     worm_ratio,
     worm_efficiency,
     motor_speed,
     gearbox_output_speed,
     motor_rated_torque,
     starting_factor,
+    crane_torque_nom=None,        # optional — only needed for Steps 2 & 3
     supplier_motor_power_kw=None,
     supplier_motor_rated_torque=None,
     supplier_motor_starting_torque=None,
@@ -61,13 +61,17 @@ def drivetrain_sizing(
     # M2_Max = M_Max / (i_worm × η)
     r['worm_input_torque_max'] = crane_torque_max / (worm_ratio * worm_efficiency)
 
-    # Step 2 — Worm shaft torque (nominal)
-    # M2_Nenn = M_Nenn / (i_worm × η)
-    r['worm_input_torque_nom'] = crane_torque_nom / (worm_ratio * worm_efficiency)
+    # Step 2 — Worm shaft torque (nominal)  [skipped when M_Nenn not provided]
+    if crane_torque_nom is not None:
+        r['worm_input_torque_nom'] = crane_torque_nom / (worm_ratio * worm_efficiency)
+    else:
+        r['worm_input_torque_nom'] = None
 
-    # Step 3 — Required gearbox output torque
-    # M_gear = M2_Nom × S_f   (S_f = 1.34 from Z-Systems sheet)
-    r['gearbox_required_torque'] = r['worm_input_torque_nom'] * SAFETY_FACTOR
+    # Step 3 — Required gearbox output torque  [skipped when M_Nenn not provided]
+    if r['worm_input_torque_nom'] is not None:
+        r['gearbox_required_torque'] = r['worm_input_torque_nom'] * SAFETY_FACTOR
+    else:
+        r['gearbox_required_torque'] = None
 
     # Step 4 — Bevel gearbox ratio
     # i_bevel = n_motor / n_gear_out
@@ -120,10 +124,11 @@ def drivetrain_sizing(
     if sc:
         supplier_checks.append(sc)
 
-    sc = _check(supplier_gearbox_rated_torque, r['gearbox_required_torque'],
-                'Gearbox rated torque vs required')
-    if sc:
-        supplier_checks.append(sc)
+    if r['gearbox_required_torque'] is not None:
+        sc = _check(supplier_gearbox_rated_torque, r['gearbox_required_torque'],
+                    'Gearbox rated torque vs required')
+        if sc:
+            supplier_checks.append(sc)
 
     sc = _ratio_check(supplier_bevel_ratio, r['bevel_ratio'],
                       'Bevel ratio vs calculated')
@@ -146,11 +151,12 @@ def drivetrain_sizing(
             checks_passed = 'MARGINAL'
     r['supplier_overall'] = checks_passed
 
-    # Round all numeric results for display
+    # Round all numeric results for display (guard None for optional steps 2 & 3)
     for key in ('worm_input_torque_max', 'worm_input_torque_nom',
                 'gearbox_required_torque', 'bevel_ratio',
                 'slewing_speed_rpm', 'motor_torque_required',
                 'motor_start_torque', 'torque_margin', 'motor_power_kw'):
-        r[key] = round(r[key], 3)
+        if r[key] is not None:
+            r[key] = round(r[key], 3)
 
     return r
