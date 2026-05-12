@@ -13,6 +13,26 @@ EXAMPLE_DATA = {
     'starting_factor': 3.40,
 }
 
+# Raw strings so backslashes reach KaTeX unchanged.
+FORMULAS = {
+    'f1':  r'M_{2,\max} = \dfrac{M_{\max}}{i_{\text{worm}} \cdot \eta}',
+    'f2':  r'M_{2,\text{nom}} = \dfrac{M_{\text{nom}}}{i_{\text{worm}} \cdot \eta}',
+    'f3':  r'M_{\text{gear,req}} = M_{2,\text{nom}} \times S_f \qquad S_f = 1.34',
+    'f4':  r'i_{\text{bevel}} = \dfrac{n_{\text{motor}}}{n_{\text{gear,out}}}',
+    'f5':  r'n_{\text{slew}} = \dfrac{n_{\text{gear,out}}}{i_{\text{worm}}}',
+    'f6':  r'M_{\text{motor,req}} = \dfrac{M_{2,\max}}{i_{\text{bevel}}}',
+    'f7':  r'M_{\text{start}} = M_n \cdot k_{\text{start}}, \qquad k_{\text{start}} = \dfrac{M_a}{M_n}',
+    'f8':  r'\text{margin} = \dfrac{M_{\text{start}}}{M_{\text{motor,req}}}',
+    'f8c': r'\begin{cases} \text{margin} \geq 1.3 & \Rightarrow \textbf{OK} \\ '
+           r'1.1 \leq \text{margin} < 1.3 & \Rightarrow \textbf{Marginal} \\ '
+           r'\text{margin} < 1.1 & \Rightarrow \textbf{Too small} \end{cases}',
+    'f9':  r'P_{\text{motor}}\,[\text{kW}] = \dfrac{M_{\text{motor,req}}\,[\text{Nm}]'
+           r'\cdot\, n_{\text{motor}}\,[\text{rpm}]}{9550}',
+    'f9b': r'9550 = \dfrac{60 \times 10^3}{2\pi} \approx 9549.3',
+    'fs_margin': r'\text{margin} = \dfrac{\text{value}_{\text{supplier}}}{\text{value}_{\text{required}}} \geq 1.10',
+    'fs_ratio':  r'\text{deviation} = \dfrac{|\,r_{\text{supplier}} - r_{\text{calc}}\,|}{r_{\text{calc}}} \leq 2\%',
+}
+
 
 def index(request):
     results = None
@@ -39,4 +59,8 @@ def index(request):
                 supplier_worm_ratio=d.get('supplier_worm_ratio'),
             )
 
-    return render(request, 'calculator/index.html', {'form': form, 'results': results})
+    return render(request, 'calculator/index.html', {
+        'form': form,
+        'results': results,
+        **FORMULAS,
+    })

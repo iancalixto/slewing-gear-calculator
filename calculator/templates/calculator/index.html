@@ -1,4 +1,6 @@
 {% extends 'calculator/base.html' %}
+{% load latexify %}
+
 {% block content %}
 
 <div class="row g-3">
@@ -161,71 +163,67 @@
             <tr class="result-row">
               <td><span class="step-badge">1</span></td>
               <td>Worm shaft torque (max)</td>
-              <td><code>M₂_Max</code></td>
+              <td>{% latexify "M_{2,\\max}" math_inline=True %}</td>
               <td class="text-end">{{ results.worm_input_torque_max }}</td>
               <td>Nm</td>
             </tr>
             <tr class="result-row">
               <td><span class="step-badge">2</span></td>
               <td>Worm shaft torque (nominal)</td>
-              <td><code>M₂_Nenn</code></td>
+              <td>{% latexify "M_{2,\\text{nom}}" math_inline=True %}</td>
               <td class="text-end">{{ results.worm_input_torque_nom }}</td>
               <td>Nm</td>
             </tr>
             <tr class="result-row">
               <td><span class="step-badge">3</span></td>
               <td>Required gearbox torque</td>
-              <td><code>M_gear_req</code></td>
+              <td>{% latexify "M_{\\text{gear,req}}" math_inline=True %}</td>
               <td class="text-end">{{ results.gearbox_required_torque }}</td>
               <td>Nm</td>
             </tr>
             <tr class="result-row">
               <td><span class="step-badge">4</span></td>
               <td>Bevel gearbox ratio</td>
-              <td><code>i_bevel</code></td>
+              <td>{% latexify "i_{\\text{bevel}}" math_inline=True %}</td>
               <td class="text-end">{{ results.bevel_ratio }}</td>
               <td>—</td>
             </tr>
             <tr class="result-row">
               <td><span class="step-badge">5</span></td>
               <td>Slewing speed</td>
-              <td><code>n_slew</code></td>
+              <td>{% latexify "n_{\\text{slew}}" math_inline=True %}</td>
               <td class="text-end">{{ results.slewing_speed_rpm }}</td>
               <td>rpm</td>
             </tr>
             <tr class="result-row">
               <td><span class="step-badge">6</span></td>
               <td>Motor torque required</td>
-              <td><code>M_motor_req</code></td>
+              <td>{% latexify "M_{\\text{motor,req}}" math_inline=True %}</td>
               <td class="text-end">{{ results.motor_torque_required }}</td>
               <td>Nm</td>
             </tr>
             <tr class="result-row">
               <td><span class="step-badge">7</span></td>
               <td>Motor starting torque available</td>
-              <td><code>M_start</code></td>
+              <td>{% latexify "M_{\\text{start}}" math_inline=True %}</td>
               <td class="text-end">{{ results.motor_start_torque }}</td>
               <td>Nm</td>
             </tr>
             <tr class="result-row {% if results.torque_check == 'OK' %}table-success{% elif results.torque_check == 'Marginal' %}table-warning{% else %}table-danger{% endif %}">
               <td><span class="step-badge">8</span></td>
               <td>Torque check</td>
-              <td><code>margin</code></td>
+              <td>{% latexify "\\text{margin}" math_inline=True %}</td>
               <td class="text-end">{{ results.torque_margin }}×</td>
               <td>
-                {% if results.torque_check == 'OK' %}
-                  <span class="badge badge-ok">OK</span>
-                {% elif results.torque_check == 'Marginal' %}
-                  <span class="badge badge-marginal">Marginal</span>
-                {% else %}
-                  <span class="badge badge-fail">Too small</span>
-                {% endif %}
+                {% if results.torque_check == 'OK' %}<span class="badge badge-ok">OK</span>
+                {% elif results.torque_check == 'Marginal' %}<span class="badge badge-marginal">Marginal</span>
+                {% else %}<span class="badge badge-fail">Too small</span>{% endif %}
               </td>
             </tr>
             <tr class="result-row">
               <td><span class="step-badge">9</span></td>
               <td>Motor power required</td>
-              <td><code>P_motor</code></td>
+              <td>{% latexify "P_{\\text{motor}}" math_inline=True %}</td>
               <td class="text-end">{{ results.motor_power_kw }}</td>
               <td>kW</td>
             </tr>
@@ -304,9 +302,9 @@
       <div class="card-header bg-secondary text-white"
            style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#formulaSection">
         <i class="bi bi-journal-code me-2"></i>Formula Reference
-        <span class="float-end small">(click to expand/collapse)</span>
+        <span class="float-end small">(click to expand / collapse)</span>
       </div>
-      <div class="collapse" id="formulaSection">
+      <div class="collapse show" id="formulaSection">
         <div class="card-body">
           <p class="text-muted small mb-3">
             Complete drivetrain sizing chain: Motor → Bevel Gearbox → Worm Gear → Slewing Ring.
@@ -314,192 +312,212 @@
           </p>
           <div class="row g-3">
 
-            {# Step 1 #}
+            {# ── Step 1 ── #}
             <div class="col-md-6 col-xl-4">
-              <div class="card border-0 bg-light h-100">
-                <div class="card-body">
+              <div class="formula-card">
+                <div class="formula-body">
                   <p class="fw-bold mb-1"><span class="step-badge">1</span>Worm shaft torque — maximum</p>
-                  <div class="formula-box">
-<span class="comment"># M_Max = max crane slewing torque (Nm)</span>
-<span class="comment"># i_worm = worm gear ratio</span>
-<span class="comment"># η     = worm gear efficiency (0–1)</span>
-
-<span class="var">M2_Max</span> <span class="op">=</span> <span class="var">M_Max</span> <span class="op">/</span> (<span class="var">i_worm</span> <span class="op">×</span> <span class="var">η</span>)
+                  <div class="formula-display">
+                    {% latexify f1 math_block=True %}
                   </div>
-                  <p class="small text-muted mt-2 mb-0">
-                    Reflects the full peak torque the worm shaft must transmit.
-                    Worm efficiency typically 0.35–0.50 for single-start worms.
-                  </p>
+                  <div class="formula-vars">
+                    <code>M_max</code> max crane slewing torque [Nm]<br>
+                    <code>i_worm</code> worm gear ratio<br>
+                    <code>η</code> worm gear efficiency (0–1)
+                  </div>
+                  <p class="formula-note">Peak torque the worm input shaft must transmit. Used in Steps 3 and 6.</p>
                 </div>
               </div>
             </div>
 
-            {# Step 2 #}
+            {# ── Step 2 ── #}
             <div class="col-md-6 col-xl-4">
-              <div class="card border-0 bg-light h-100">
-                <div class="card-body">
+              <div class="formula-card">
+                <div class="formula-body">
                   <p class="fw-bold mb-1"><span class="step-badge">2</span>Worm shaft torque — nominal</p>
-                  <div class="formula-box">
-<span class="comment"># M_Nenn = nominal (continuous) crane torque</span>
-
-<span class="var">M2_Nenn</span> <span class="op">=</span> <span class="var">M_Nenn</span> <span class="op">/</span> (<span class="var">i_worm</span> <span class="op">×</span> <span class="var">η</span>)
+                  <div class="formula-display">
+                    {% latexify f2 math_block=True %}
                   </div>
-                  <p class="small text-muted mt-2 mb-0">
-                    Used for thermal / continuous-duty sizing of the gearbox.
-                  </p>
+                  <div class="formula-vars">
+                    <code>M_nom</code> nominal (continuous) crane torque [Nm]<br>
+                    Same denominator as Step 1.
+                  </div>
+                  <p class="formula-note">Used for continuous-duty / thermal sizing of the gearbox (Step 3).</p>
                 </div>
               </div>
             </div>
 
-            {# Step 3 #}
+            {# ── Step 3 ── #}
             <div class="col-md-6 col-xl-4">
-              <div class="card border-0 bg-light h-100">
-                <div class="card-body">
+              <div class="formula-card">
+                <div class="formula-body">
                   <p class="fw-bold mb-1"><span class="step-badge">3</span>Required gearbox torque</p>
-                  <div class="formula-box">
-<span class="comment"># S_f = safety factor = 1.34 (Z-Systems)</span>
-
-<span class="var">M_gear_req</span> <span class="op">=</span> <span class="var">M2_Nenn</span> <span class="op">×</span> <span class="num">1.34</span>
+                  <div class="formula-display">
+                    {% latexify f3 math_block=True %}
                   </div>
-                  <p class="small text-muted mt-2 mb-0">
-                    The bevel gearbox catalogue torque rating must be ≥ M_gear_req.
-                    Example: ZK4 rated 760 Nm &gt; 517 Nm required.
+                  <div class="formula-vars">
+                    <code>S_f = 1.34</code> safety factor (Z-Systems sizing sheet)<br>
+                    <code>M_2,nom</code> from Step 2
+                  </div>
+                  <p class="formula-note">
+                    The bevel gearbox catalogue torque rating must be ≥ this value.
+                    <em>Example: ZK4 (760 Nm) &gt; 517 Nm required.</em>
                   </p>
                 </div>
               </div>
             </div>
 
-            {# Step 4 #}
+            {# ── Step 4 ── #}
             <div class="col-md-6 col-xl-4">
-              <div class="card border-0 bg-light h-100">
-                <div class="card-body">
+              <div class="formula-card">
+                <div class="formula-body">
                   <p class="fw-bold mb-1"><span class="step-badge">4</span>Bevel gearbox ratio</p>
-                  <div class="formula-box">
-<span class="comment"># n_motor    = motor speed (rpm)</span>
-<span class="comment"># n_gear_out = bevel output shaft speed (rpm)</span>
-
-<span class="var">i_bevel</span> <span class="op">=</span> <span class="var">n_motor</span> <span class="op">/</span> <span class="var">n_gear_out</span>
+                  <div class="formula-display">
+                    {% latexify f4 math_block=True %}
                   </div>
-                  <p class="small text-muted mt-2 mb-0">
-                    The bevel gearbox reduces motor speed to the worm input shaft speed.
-                  </p>
+                  <div class="formula-vars">
+                    <code>n_motor</code> motor nameplate speed [rpm]<br>
+                    <code>n_gear_out</code> bevel output shaft speed [rpm]
+                  </div>
+                  <p class="formula-note">Reduces motor speed to the worm input shaft speed. Used in Steps 6 and 9.</p>
                 </div>
               </div>
             </div>
 
-            {# Step 5 #}
+            {# ── Step 5 ── #}
             <div class="col-md-6 col-xl-4">
-              <div class="card border-0 bg-light h-100">
-                <div class="card-body">
+              <div class="formula-card">
+                <div class="formula-body">
                   <p class="fw-bold mb-1"><span class="step-badge">5</span>Slewing speed</p>
-                  <div class="formula-box">
-<span class="comment"># n_gear_out = bevel output = worm input speed</span>
-
-<span class="var">n_slew</span> <span class="op">=</span> <span class="var">n_gear_out</span> <span class="op">/</span> <span class="var">i_worm</span>
+                  <div class="formula-display">
+                    {% latexify f5 math_block=True %}
                   </div>
-                  <p class="small text-muted mt-2 mb-0">
-                    Final crane rotation speed in rpm.
-                    Typical target: 0.25–0.35 rpm for offshore cranes.
-                  </p>
+                  <div class="formula-vars">
+                    <code>n_gear_out</code> bevel output = worm input speed [rpm]<br>
+                    <code>i_worm</code> worm gear ratio
+                  </div>
+                  <p class="formula-note">Final crane rotation speed. Typical target: 0.25–0.35 rpm for offshore cranes.</p>
                 </div>
               </div>
             </div>
 
-            {# Step 6 #}
+            {# ── Step 6 ── #}
             <div class="col-md-6 col-xl-4">
-              <div class="card border-0 bg-light h-100">
-                <div class="card-body">
+              <div class="formula-card">
+                <div class="formula-body">
                   <p class="fw-bold mb-1"><span class="step-badge">6</span>Motor torque required</p>
-                  <div class="formula-box">
-<span class="comment"># Back-calculated from worm max input torque</span>
-
-<span class="var">M_motor_req</span> <span class="op">=</span> <span class="var">M2_Max</span> <span class="op">/</span> <span class="var">i_bevel</span>
+                  <div class="formula-display">
+                    {% latexify f6 math_block=True %}
                   </div>
-                  <p class="small text-muted mt-2 mb-0">
-                    The motor must be able to produce this starting torque to
-                    move the crane under peak load.
-                  </p>
+                  <div class="formula-vars">
+                    <code>M_2,max</code> worm shaft max torque from Step 1<br>
+                    <code>i_bevel</code> bevel ratio from Step 4
+                  </div>
+                  <p class="formula-note">Minimum torque the motor must develop at starting to move the crane under peak load.</p>
                 </div>
               </div>
             </div>
 
-            {# Step 7 #}
+            {# ── Step 7 ── #}
             <div class="col-md-6 col-xl-4">
-              <div class="card border-0 bg-light h-100">
-                <div class="card-body">
+              <div class="formula-card">
+                <div class="formula-body">
                   <p class="fw-bold mb-1"><span class="step-badge">7</span>Motor starting torque available</p>
-                  <div class="formula-box">
-<span class="comment"># M_n     = motor rated (nameplate) torque</span>
-<span class="comment"># Ma/Mn   = locked-rotor / rated torque ratio</span>
-
-<span class="var">M_start</span> <span class="op">=</span> <span class="var">M_n</span> <span class="op">×</span> (<span class="var">Ma</span><span class="op">/</span><span class="var">Mn</span>)
+                  <div class="formula-display">
+                    {% latexify f7 math_block=True %}
                   </div>
-                  <p class="small text-muted mt-2 mb-0">
-                    For IEC motors Ma/Mn is typically 2.0–3.5 for standard
-                    induction motors and up to 4+ for high-torque designs.
+                  <div class="formula-vars">
+                    <code>M_n</code> motor rated (nameplate) torque [Nm]<br>
+                    <code>k_start = Ma/Mn</code> locked-rotor / rated torque ratio
+                  </div>
+                  <p class="formula-note">
+                    For IEC induction motors <code>Ma/Mn</code> is typically 2.0–3.5; high-torque designs up to 4+.
                   </p>
                 </div>
               </div>
             </div>
 
-            {# Step 8 #}
+            {# ── Step 8 ── #}
             <div class="col-md-6 col-xl-4">
-              <div class="card border-0 bg-light h-100">
-                <div class="card-body">
+              <div class="formula-card">
+                <div class="formula-body">
                   <p class="fw-bold mb-1"><span class="step-badge">8</span>Torque feasibility check</p>
-                  <div class="formula-box">
-<span class="var">margin</span> <span class="op">=</span> <span class="var">M_start</span> <span class="op">/</span> <span class="var">M_motor_req</span>
-
-<span class="comment"># margin ≥ 1.3  →  OK</span>
-<span class="comment"># margin ≥ 1.1  →  Marginal (not recommended)</span>
-<span class="comment"># margin &lt;  1.1  →  Too small → choose bigger motor</span>
+                  <div class="formula-display">
+                    {% latexify f8 math_block=True %}
                   </div>
-                  <p class="small text-muted mt-2 mb-0">
-                    The 1.3× margin accounts for supply-voltage dip, temperature,
+                  <div class="formula-display mt-1">
+                    {% latexify f8c math_block=True %}
+                  </div>
+                  <p class="formula-note">
+                    The 1.3× margin accounts for supply-voltage dip, temperature rise,
                     bearing stiction, and manufacturing tolerances.
                   </p>
                 </div>
               </div>
             </div>
 
-            {# Step 9 #}
+            {# ── Step 9 ── #}
             <div class="col-md-6 col-xl-4">
-              <div class="card border-0 bg-light h-100">
-                <div class="card-body">
+              <div class="formula-card">
+                <div class="formula-body">
                   <p class="fw-bold mb-1"><span class="step-badge">9</span>Motor power required</p>
-                  <div class="formula-box">
-<span class="comment"># 9550 = 60 × 1000 / (2π) — unit conversion constant</span>
-<span class="comment"># P in kW, M in Nm, n in rpm</span>
-
-<span class="var">P_motor</span> <span class="op">=</span> (<span class="var">M_motor_req</span> <span class="op">×</span> <span class="var">n_motor</span>) <span class="op">/</span> <span class="num">9550</span>
+                  <div class="formula-display">
+                    {% latexify f9 math_block=True %}
                   </div>
-                  <p class="small text-muted mt-2 mb-0">
-                    Minimum nameplate kW rating of the selected motor.
-                    Always round <em>up</em> to the next standard IEC frame size.
-                  </p>
+                  <div class="formula-display mt-1">
+                    {% latexify f9b math_block=True %}
+                  </div>
+                  <div class="formula-vars">
+                    <code>M_motor,req</code> from Step 6 [Nm] &nbsp;·&nbsp;
+                    <code>n_motor</code> [rpm]
+                  </div>
+                  <p class="formula-note">Always round <em>up</em> to the next standard IEC frame power rating.</p>
                 </div>
               </div>
             </div>
 
-          </div>{# end formula row #}
+          </div>{# end 9-step row #}
 
-          <hr class="my-3">
-          <h6 class="fw-semibold">Supplier Data Check Criteria</h6>
-          <div class="row g-2 small text-muted">
+          <hr class="my-4">
+
+          {# ── Supplier check formulas ── #}
+          <h6 class="fw-semibold mb-3"><i class="bi bi-clipboard-check me-2"></i>Supplier Data Check Criteria</h6>
+          <div class="row g-3">
+
             <div class="col-md-6">
-              <ul class="mb-0">
-                <li><strong>Torque / power values</strong>: supplier value ÷ required ≥ 1.10 → OK, ≥ 1.00 → Marginal, &lt; 1.00 → Too small</li>
-                <li><strong>Ratio values</strong>: |supplier − calculated| ÷ calculated ≤ 2% → OK, otherwise Mismatch</li>
-              </ul>
+              <div class="formula-card">
+                <div class="formula-body">
+                  <p class="fw-bold mb-1">Torque &amp; Power values</p>
+                  <div class="formula-display">
+                    {% latexify fs_margin math_block=True %}
+                  </div>
+                  <div class="formula-vars">
+                    <span class="badge badge-ok text-white">≥ 1.10</span> OK &nbsp;
+                    <span class="badge badge-marginal text-white">≥ 1.00</span> Marginal &nbsp;
+                    <span class="badge badge-fail text-white">&lt; 1.00</span> Too small
+                  </div>
+                  <p class="formula-note">Applied to: motor starting torque, motor rated torque, motor power, gearbox torque.</p>
+                </div>
+              </div>
             </div>
+
             <div class="col-md-6">
-              <ul class="mb-0">
-                <li><strong>Motor starting torque</strong> checked against M_motor_req (Step 6)</li>
-                <li><strong>Gearbox torque</strong> checked against M_gear_req (Step 3)</li>
-                <li><strong>Motor power</strong> checked against P_motor (Step 9)</li>
-              </ul>
+              <div class="formula-card">
+                <div class="formula-body">
+                  <p class="fw-bold mb-1">Ratio values</p>
+                  <div class="formula-display">
+                    {% latexify fs_ratio math_block=True %}
+                  </div>
+                  <div class="formula-vars">
+                    <span class="badge badge-ok text-white">≤ 2%</span> OK &nbsp;
+                    <span class="badge badge-fail text-white">&gt; 2%</span> Mismatch
+                  </div>
+                  <p class="formula-note">Applied to: bevel gearbox ratio, worm gear ratio.</p>
+                </div>
+              </div>
             </div>
-          </div>
+
+          </div>{# end supplier row #}
 
         </div>
       </div>
