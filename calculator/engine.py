@@ -95,9 +95,11 @@ def drivetrain_sizing(
     else:
         r['torque_check'] = 'Too small'
 
-    # Step 9 — Motor power required
-    # P = (M_motor_req × n_motor) / 9550
-    r['motor_power_kw'] = (r['motor_torque_required'] * motor_speed) / 9550
+    # Step 9 — Motor rated power (nameplate)
+    # P = (M_n × n_motor) / 9550
+    # M_n is the rated torque from the motor nameplate, not the back-calculated
+    # required torque. This gives the standard IEC power class of the motor.
+    r['motor_power_kw'] = (motor_rated_torque * motor_speed) / 9550
 
     # ── Supplier data checks ─────────────────────────────────────────────────
     supplier_checks = []

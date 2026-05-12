@@ -26,9 +26,9 @@ FORMULAS = {
     'f8c': r'\begin{cases} \text{margin} \geq 1.3 & \Rightarrow \textbf{OK} \\ '
            r'1.1 \leq \text{margin} < 1.3 & \Rightarrow \textbf{Marginal} \\ '
            r'\text{margin} < 1.1 & \Rightarrow \textbf{Too small} \end{cases}',
-    # Step 9 — both rearrangements of the same identity
-    'f9':     r'P\,[\text{kW}] = \dfrac{M\,[\text{Nm}] \cdot n\,[\text{rpm}]}{9550}',
-    'f9_inv': r'M\,[\text{Nm}] = \dfrac{9550 \times P\,[\text{kW}]}{n\,[\text{rpm}]}',
+    # Step 9 — motor rated power from nameplate torque, both rearrangements
+    'f9':     r'P_{\text{rated}}\,[\text{kW}] = \dfrac{M_n\,[\text{Nm}] \cdot n_{\text{motor}}\,[\text{rpm}]}{9550}',
+    'f9_inv': r'M_n\,[\text{Nm}] = \dfrac{9550 \times P_{\text{rated}}\,[\text{kW}]}{n_{\text{motor}}\,[\text{rpm}]}',
     'f9b':    r'9550 = \dfrac{60 \times 10^3}{2\pi} \approx 9549.3',
     'fs_margin': r'\text{margin} = \dfrac{\text{value}_{\text{supplier}}}{\text{value}_{\text{required}}} \geq 1.10',
     'fs_ratio':  r'\text{deviation} = \dfrac{|\,r_{\text{supplier}} - r_{\text{calc}}\,|}{r_{\text{calc}}} \leq 2\%',

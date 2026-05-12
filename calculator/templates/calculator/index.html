@@ -222,8 +222,8 @@
             </tr>
             <tr class="result-row">
               <td><span class="step-badge">9</span></td>
-              <td>Motor power required</td>
-              <td>{% latexify "P_{\\text{motor}}" math_inline=True %}</td>
+              <td>Motor rated power <small class="text-muted">(from M_n × n)</small></td>
+              <td>{% latexify "P_{\\text{rated}}" math_inline=True %}</td>
               <td class="text-end">{{ results.motor_power_kw }}</td>
               <td>kW</td>
             </tr>
@@ -477,11 +477,11 @@
                   </div>
 
                   <div class="formula-vars mt-2">
-                    <code>M</code> = <code>M<sub>motor,req</sub></code> from Step 6 [Nm]
-                    — <strong>required</strong> motor torque, <em>not</em> the nameplate rated torque
-                    <code>M<sub>n</sub></code><br>
-                    <code>n</code> = motor speed [rpm]<br>
-                    <code>P</code> = mechanical shaft power [kW]
+                    <code>M_n</code> = motor <strong>rated</strong> (nameplate) torque [Nm] — input parameter<br>
+                    <code>n_motor</code> = motor nameplate speed [rpm]<br>
+                    <code>P_rated</code> = motor rated mechanical power [kW]<br>
+                    <span class="text-muted">Note: this identifies the IEC power frame (e.g. 0.75 kW, 1.1 kW …).
+                    Whether the motor can actually start the crane is verified separately in Step 8.</span>
                   </div>
                   <p class="formula-note">Always round <em>up</em> to the next standard IEC frame power rating.</p>
                 </div>
