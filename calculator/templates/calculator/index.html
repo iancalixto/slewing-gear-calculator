@@ -461,15 +461,27 @@
               <div class="formula-card">
                 <div class="formula-body">
                   <p class="fw-bold mb-1"><span class="step-badge">9</span>Motor power required</p>
+
+                  <p class="formula-vars mb-1">Power from torque:</p>
                   <div class="formula-display">
                     {% latexify f9 math_block=True %}
                   </div>
+
+                  <p class="formula-vars mb-1 mt-2">Torque from power (rearranged):</p>
+                  <div class="formula-display">
+                    {% latexify f9_inv math_block=True %}
+                  </div>
+
                   <div class="formula-display mt-1">
                     {% latexify f9b math_block=True %}
                   </div>
-                  <div class="formula-vars">
-                    <code>M_motor,req</code> from Step 6 [Nm] &nbsp;·&nbsp;
-                    <code>n_motor</code> [rpm]
+
+                  <div class="formula-vars mt-2">
+                    <code>M</code> = <code>M<sub>motor,req</sub></code> from Step 6 [Nm]
+                    — <strong>required</strong> motor torque, <em>not</em> the nameplate rated torque
+                    <code>M<sub>n</sub></code><br>
+                    <code>n</code> = motor speed [rpm]<br>
+                    <code>P</code> = mechanical shaft power [kW]
                   </div>
                   <p class="formula-note">Always round <em>up</em> to the next standard IEC frame power rating.</p>
                 </div>
