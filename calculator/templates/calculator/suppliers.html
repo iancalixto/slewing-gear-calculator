@@ -1,0 +1,90 @@
+{% extends 'calculator/base.html' %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Saved Suppliers</h5>
+  <a href="{% url 'index' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>New Calculation
+  </a>
+</div>
+
+{% if calculations %}
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <table class="table table-sm table-hover mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Supplier / Motor</th>
+          <th>Crane Type</th>
+          <th class="text-end">M_max (Nm)</th>
+          <th class="text-end">Worm i</th>
+          <th class="text-end">M_n (Nm)</th>
+          <th class="text-end">P_rated (kW)</th>
+          <th class="text-end">Margin</th>
+          <th>Check</th>
+          <th>Saved</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in calculations %}
+        <tr>
+          <td>
+            <a href="{% url 'supplier_detail' c.pk %}" class="fw-semibold text-decoration-none">
+              {{ c.supplier_name }}
+            </a>
+          </td>
+          <td>
+            {% if c.crane_type == 'standard_pf' %}
+              <span class="badge bg-primary">Standard PF</span>
+            {% else %}
+              <span class="badge bg-dark">PF-XXL</span>
+            {% endif %}
+          </td>
+          <td class="text-end font-monospace">{{ c.crane_torque_max }}</td>
+          <td class="text-end font-monospace">{{ c.worm_ratio }}</td>
+          <td class="text-end font-monospace">{{ c.motor_rated_torque }}</td>
+          <td class="text-end font-monospace">{{ c.motor_power_kw }}</td>
+          <td class="text-end font-monospace">{{ c.torque_margin }}×</td>
+          <td>
+            {% if c.torque_check == 'OK' %}
+              <span class="badge badge-ok">OK</span>
+            {% elif c.torque_check == 'Marginal' %}
+              <span class="badge badge-marginal">Marginal</span>
+            {% else %}
+              <span class="badge badge-fail">Too small</span>
+            {% endif %}
+          </td>
+          <td class="text-muted small">{{ c.saved_at|date:"d M Y" }}</td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="{% url 'supplier_detail' c.pk %}" class="btn btn-outline-secondary btn-sm py-0 px-1" title="View">
+                <i class="bi bi-eye"></i>
+              </a>
+              <form method="post" action="{% url 'delete_calculation' c.pk %}"
+                    onsubmit="return confirm('Delete {{ c.supplier_name }}?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-1" title="Delete">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card shadow-sm">
+  <div class="card-body text-center py-5 text-muted">
+    <i class="bi bi-inbox fs-1 mb-3 d-block"></i>
+    No saved calculations yet.<br>
+    <a href="{% url 'index' %}" class="btn btn-primary btn-sm mt-2">
+      <i class="bi bi-calculator me-1"></i>Go to Calculator
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

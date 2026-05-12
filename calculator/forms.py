@@ -1,4 +1,5 @@
 from django import forms
+from .models import MotorCalculation
 
 
 FLOAT_WIDGET = {'class': 'form-control form-control-sm', 'step': 'any'}
@@ -84,4 +85,20 @@ class DrivetrainForm(forms.Form):
         label='Supplier worm ratio',
         required=False, min_value=0,
         widget=forms.NumberInput(attrs=FLOAT_WIDGET_OPT),
+    )
+
+
+class SaveCalculationForm(forms.Form):
+    supplier_name = forms.CharField(
+        max_length=200,
+        label='Supplier / Motor name',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-sm',
+            'placeholder': 'e.g. Siemens 1LA7 0.75 kW',
+        }),
+    )
+    crane_type = forms.ChoiceField(
+        choices=MotorCalculation.CRANE_CHOICES,
+        label='Crane type',
+        widget=forms.Select(attrs={'class': 'form-select form-select-sm'}),
     )

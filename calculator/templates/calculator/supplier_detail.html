@@ -1,0 +1,144 @@
+{% extends 'calculator/base.html' %}
+{% load latexify %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+  <a href="{% url 'suppliers' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>All Suppliers
+  </a>
+  <h5 class="mb-0">{{ calc.supplier_name }}</h5>
+  {% if calc.crane_type == 'standard_pf' %}
+    <span class="badge bg-primary">Standard PF Crane</span>
+  {% else %}
+    <span class="badge bg-dark">PF-XXL</span>
+  {% endif %}
+  <span class="text-muted small ms-auto">Saved {{ calc.saved_at|date:"d M Y, H:i" }}</span>
+  <form method="post" action="{% url 'delete_calculation' calc.pk %}"
+        onsubmit="return confirm('Delete this calculation?')" class="ms-1">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-trash me-1"></i>Delete
+    </button>
+  </form>
+</div>
+
+<div class="row g-3">
+
+  {# Left: inputs #}
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-secondary text-white">
+        <i class="bi bi-input-cursor me-2"></i>Saved Inputs
+      </div>
+      <div class="card-body">
+        <p class="section-label">Crane Load</p>
+        <table class="table table-sm mb-2">
+          <tr><td class="text-muted">M_max</td><td class="text-end font-monospace">{{ calc.crane_torque_max }} Nm</td></tr>
+          <tr><td class="text-muted">M_nom</td><td class="text-end font-monospace">{{ calc.crane_torque_nom }} Nm</td></tr>
+        </table>
+        <p class="section-label">Worm Gear</p>
+        <table class="table table-sm mb-2">
+          <tr><td class="text-muted">i_worm</td><td class="text-end font-monospace">{{ calc.worm_ratio }}</td></tr>
+          <tr><td class="text-muted">η</td><td class="text-end font-monospace">{{ calc.worm_efficiency }}</td></tr>
+        </table>
+        <p class="section-label">Motor</p>
+        <table class="table table-sm mb-2">
+          <tr><td class="text-muted">n_motor</td><td class="text-end font-monospace">{{ calc.motor_speed }} rpm</td></tr>
+          <tr><td class="text-muted">M_n</td><td class="text-end font-monospace">{{ calc.motor_rated_torque }} Nm</td></tr>
+          <tr><td class="text-muted">Ma/Mn</td><td class="text-end font-monospace">{{ calc.starting_factor }}</td></tr>
+        </table>
+        <p class="section-label">Bevel Gearbox</p>
+        <table class="table table-sm mb-0">
+          <tr><td class="text-muted">n_gear_out</td><td class="text-end font-monospace">{{ calc.gearbox_output_speed }} rpm</td></tr>
+        </table>
+
+        {% if calc.supplier_motor_power_kw or calc.supplier_motor_rated_torque or calc.supplier_motor_starting_torque or calc.supplier_gearbox_rated_torque %}
+        <p class="section-label">Supplier Data Provided</p>
+        <table class="table table-sm mb-0">
+          {% if calc.supplier_motor_power_kw %}<tr><td class="text-muted">Power</td><td class="text-end font-monospace">{{ calc.supplier_motor_power_kw }} kW</td></tr>{% endif %}
+          {% if calc.supplier_motor_rated_torque %}<tr><td class="text-muted">M_n supplier</td><td class="text-end font-monospace">{{ calc.supplier_motor_rated_torque }} Nm</td></tr>{% endif %}
+          {% if calc.supplier_motor_starting_torque %}<tr><td class="text-muted">Ma supplier</td><td class="text-end font-monospace">{{ calc.supplier_motor_starting_torque }} Nm</td></tr>{% endif %}
+          {% if calc.supplier_gearbox_rated_torque %}<tr><td class="text-muted">Gearbox</td><td class="text-end font-monospace">{{ calc.supplier_gearbox_rated_torque }} Nm</td></tr>{% endif %}
+          {% if calc.supplier_bevel_ratio %}<tr><td class="text-muted">i_bevel supp.</td><td class="text-end font-monospace">{{ calc.supplier_bevel_ratio }}</td></tr>{% endif %}
+          {% if calc.supplier_worm_ratio %}<tr><td class="text-muted">i_worm supp.</td><td class="text-end font-monospace">{{ calc.supplier_worm_ratio }}</td></tr>{% endif %}
+        </table>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# Right: results #}
+  <div class="col-lg-8">
+
+    {% if results.torque_check == 'OK' %}
+    <div class="alert alert-success d-flex align-items-center mb-3 py-2">
+      <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+      <strong>Motor suitable</strong>&nbsp;— margin {{ results.torque_margin }}× (≥ 1.3)
+    </div>
+    {% elif results.torque_check == 'Marginal' %}
+    <div class="alert alert-warning d-flex align-items-center mb-3 py-2">
+      <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+      <strong>On the limit</strong>&nbsp;— margin {{ results.torque_margin }}×
+    </div>
+    {% else %}
+    <div class="alert alert-danger d-flex align-items-center mb-3 py-2">
+      <i class="bi bi-x-circle-fill me-2 fs-5"></i>
+      <strong>Motor too small</strong>&nbsp;— margin {{ results.torque_margin }}×
+    </div>
+    {% endif %}
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header bg-dark text-white"><i class="bi bi-table me-2"></i>Results</div>
+      <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-light">
+            <tr><th>Step</th><th>Parameter</th><th>Symbol</th><th class="text-end">Value</th><th>Unit</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="step-badge">1</span></td><td>Worm shaft torque (max)</td><td>{% latexify "M_{2,\\max}" math_inline=True %}</td><td class="text-end font-monospace">{{ results.worm_input_torque_max }}</td><td>Nm</td></tr>
+            <tr><td><span class="step-badge">2</span></td><td>Worm shaft torque (nom)</td><td>{% latexify "M_{2,\\text{nom}}" math_inline=True %}</td><td class="text-end font-monospace">{{ results.worm_input_torque_nom }}</td><td>Nm</td></tr>
+            <tr><td><span class="step-badge">3</span></td><td>Required gearbox torque</td><td>{% latexify "M_{\\text{gear,req}}" math_inline=True %}</td><td class="text-end font-monospace">{{ results.gearbox_required_torque }}</td><td>Nm</td></tr>
+            <tr><td><span class="step-badge">4</span></td><td>Bevel gearbox ratio</td><td>{% latexify "i_{\\text{bevel}}" math_inline=True %}</td><td class="text-end font-monospace">{{ results.bevel_ratio }}</td><td>—</td></tr>
+            <tr><td><span class="step-badge">5</span></td><td>Slewing speed</td><td>{% latexify "n_{\\text{slew}}" math_inline=True %}</td><td class="text-end font-monospace">{{ results.slewing_speed_rpm }}</td><td>rpm</td></tr>
+            <tr><td><span class="step-badge">6</span></td><td>Motor torque required</td><td>{% latexify "M_{\\text{motor,req}}" math_inline=True %}</td><td class="text-end font-monospace">{{ results.motor_torque_required }}</td><td>Nm</td></tr>
+            <tr><td><span class="step-badge">7</span></td><td>Motor starting torque</td><td>{% latexify "M_{\\text{start}}" math_inline=True %}</td><td class="text-end font-monospace">{{ results.motor_start_torque }}</td><td>Nm</td></tr>
+            <tr class="{% if results.torque_check == 'OK' %}table-success{% elif results.torque_check == 'Marginal' %}table-warning{% else %}table-danger{% endif %}">
+              <td><span class="step-badge">8</span></td><td>Torque check</td>
+              <td>{% latexify "\\text{margin}" math_inline=True %}</td>
+              <td class="text-end font-monospace">{{ results.torque_margin }}×</td>
+              <td>{% if results.torque_check == 'OK' %}<span class="badge badge-ok">OK</span>{% elif results.torque_check == 'Marginal' %}<span class="badge badge-marginal">Marginal</span>{% else %}<span class="badge badge-fail">Too small</span>{% endif %}</td>
+            </tr>
+            <tr><td><span class="step-badge">9</span></td><td>Motor rated power</td><td>{% latexify "P_{\\text{rated}}" math_inline=True %}</td><td class="text-end font-monospace">{{ results.motor_power_kw }}</td><td>kW</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if results.supplier_checks %}
+    <div class="card shadow-sm">
+      <div class="card-header {% if results.supplier_overall == 'ALL OK' %}bg-success text-white{% elif results.supplier_overall == 'MARGINAL' %}bg-warning{% else %}bg-danger text-white{% endif %} d-flex justify-content-between">
+        <span><i class="bi bi-clipboard-check me-2"></i>Supplier Data Check</span>
+        <span class="badge {% if results.supplier_overall == 'ALL OK' %}bg-light text-success{% elif results.supplier_overall == 'MARGINAL' %}bg-light text-warning{% else %}bg-light text-danger{% endif %}">{{ results.supplier_overall }}</span>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr><th>Parameter</th><th class="text-end">Supplied</th><th class="text-end">Required</th><th class="text-end">Margin</th><th>Result</th></tr></thead>
+          <tbody>
+            {% for c in results.supplier_checks %}
+            <tr class="{% if c.status == 'OK' %}table-success{% elif c.status == 'Marginal' %}table-warning{% else %}table-danger{% endif %}">
+              <td>{{ c.label }}</td>
+              <td class="text-end font-monospace">{{ c.supplied }}</td>
+              <td class="text-end font-monospace">{% if c.required is not None %}{{ c.required }}{% else %}{{ c.calculated }}{% endif %}</td>
+              <td class="text-end font-monospace">{% if c.margin is not None %}{{ c.margin }}×{% else %}{{ c.deviation_pct }}%{% endif %}</td>
+              <td>{% if c.status == 'OK' %}<span class="badge badge-ok">OK</span>{% elif c.status == 'Marginal' %}<span class="badge badge-marginal">Marginal</span>{% else %}<span class="badge badge-fail">{{ c.status }}</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
