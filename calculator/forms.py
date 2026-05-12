@@ -103,3 +103,41 @@ class SaveCalculationForm(forms.Form):
         label='Crane type',
         widget=forms.Select(attrs={'class': 'form-select form-select-sm'}),
     )
+
+
+class DatasheetUploadForm(forms.Form):
+    pdf_file = forms.FileField(
+        label='PDF Datasheet',
+        widget=forms.FileInput(attrs={
+            'class': 'form-control form-control-sm',
+            'accept': '.pdf',
+        }),
+    )
+    supplier_name = forms.CharField(
+        max_length=200,
+        label='Supplier Name',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-sm',
+            'placeholder': 'e.g. Bonfiglioli, ABB, Siemens',
+        }),
+    )
+    price_prototype = forms.DecimalField(
+        max_digits=10, decimal_places=2,
+        required=False,
+        label='Prototype Price (€)',
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control form-control-sm',
+            'step': '0.01',
+            'placeholder': 'e.g. 1250.00',
+        }),
+    )
+    price_series = forms.DecimalField(
+        max_digits=10, decimal_places=2,
+        required=False,
+        label='Series Price — 100 units (€)',
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control form-control-sm',
+            'step': '0.01',
+            'placeholder': 'e.g. 980.00',
+        }),
+    )

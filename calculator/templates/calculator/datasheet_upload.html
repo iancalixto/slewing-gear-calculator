@@ -1,0 +1,70 @@
+{% extends 'calculator/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7 col-xl-6">
+
+    <h5 class="mb-4 text-white-50">Motor Datasheet Import</h5>
+
+    {# ── Upload card ── #}
+    <div class="card shadow-sm mb-3">
+      <div class="card-header bg-primary text-white">
+        <i class="bi bi-filetype-pdf me-2"></i>Upload Supplier Datasheet (PDF)
+      </div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              {{ form.pdf_file.label }}
+              <span class="text-danger">*</span>
+            </label>
+            {{ form.pdf_file }}
+            {% if form.pdf_file.errors %}
+              <div class="text-danger small mt-1">{{ form.pdf_file.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              {{ form.supplier_name.label }}
+              <span class="text-danger">*</span>
+            </label>
+            {{ form.supplier_name }}
+            {% if form.supplier_name.errors %}
+              <div class="text-danger small mt-1">{{ form.supplier_name.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <p class="form-label fw-semibold mb-1">Pricing <span class="text-muted fw-normal">(optional)</span></p>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label mb-1 small">{{ form.price_prototype.label }}</label>
+              {{ form.price_prototype }}
+            </div>
+            <div class="col-6">
+              <label class="form-label mb-1 small">{{ form.price_series.label }}</label>
+              {{ form.price_series }}
+            </div>
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-filetype-pdf me-1"></i>Extract &amp; Continue to Calculator
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {# ── No datasheet button ── #}
+    <div class="d-grid">
+      <a href="{% url 'index' %}" class="btn btn-outline-secondary btn-lg">
+        <i class="bi bi-pencil-square me-2"></i>No Datasheet — Enter Parameters Manually
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

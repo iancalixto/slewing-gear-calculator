@@ -13,6 +13,8 @@ class MotorCalculation(models.Model):
     supplier_name = models.CharField(max_length=200)
     crane_type = models.CharField(max_length=20, choices=CRANE_CHOICES)
     saved_at = models.DateTimeField(auto_now_add=True)
+    price_prototype = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    price_series = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     # ── Calculation inputs ────────────────────────────────────────────────────
     crane_torque_max = models.FloatField()

@@ -1,7 +1,13 @@
+import json
+import os
+import tempfile
+from decimal import Decimal
+
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import DrivetrainForm, SaveCalculationForm
+from .forms import DrivetrainForm, SaveCalculationForm, DatasheetUploadForm
 from .engine import drivetrain_sizing
 from .models import MotorCalculation
+from .pdf_parser import parse_datasheet
 
 # Raw strings so backslashes reach KaTeX unchanged.
 FORMULAS = {
@@ -23,7 +29,6 @@ FORMULAS = {
     'f9':     r'P_{\text{rated}}\,[\text{kW}] = \dfrac{M_n\,[\text{Nm}] \cdot n_{\text{motor}}\,[\text{rpm}]}{9550}',
     'f9_inv': r'M_n\,[\text{Nm}] = \dfrac{9550 \times P_{\text{rated}}\,[\text{kW}]}{n_{\text{motor}}\,[\text{rpm}]}',
     'f9b':    r'9550 = \dfrac{60 \times 10^3}{2\pi} \approx 9549.3',
-    # Gearbox sizing (load spectrum method) — optional, requires M_Nenn
     'fg1': r'M_{2,\text{nom}} = \dfrac{M_{\text{nom}}}{i_{\text{worm}} \cdot \eta}',
     'fg2': r'M_{2,\max} = \dfrac{M_{\max}}{i_{\text{worm}} \cdot \eta}',
     'fg3': r'\lambda = \dfrac{M_{2,\text{nom}}}{M_{2,\max}}',
@@ -38,13 +43,27 @@ FORMULAS = {
 }
 
 
+def _load_datasheet(post_data) -> tuple:
+    """Parse optional datasheet_data JSON from POST. Returns (dict|None, str)."""
+    raw = post_data.get('datasheet_data', '').strip()
+    if raw:
+        try:
+            return json.loads(raw), raw
+        except (json.JSONDecodeError, ValueError):
+            pass
+    return None, ''
+
+
 def index(request):
     results = None
     save_form = SaveCalculationForm()
-    form = DrivetrainForm()  # always starts empty
+    form = DrivetrainForm()
+    datasheet = None
+    datasheet_json = ''
 
     if request.method == 'POST':
         form = DrivetrainForm(request.POST)
+        datasheet, datasheet_json = _load_datasheet(request.POST)
         if form.is_valid():
             d = form.cleaned_data
             results = drivetrain_sizing(
@@ -68,6 +87,65 @@ def index(request):
         'form': form,
         'save_form': save_form,
         'results': results,
+        'datasheet': datasheet,
+        'datasheet_json': datasheet_json,
+        'active_page': 'calculator',
+        **FORMULAS,
+    })
+
+
+def upload_datasheet(request):
+    if request.method == 'GET':
+        return render(request, 'calculator/datasheet_upload.html', {
+            'form': DatasheetUploadForm(),
+            'active_page': 'calculator',
+        })
+
+    form = DatasheetUploadForm(request.POST, request.FILES)
+    if not form.is_valid():
+        return render(request, 'calculator/datasheet_upload.html', {
+            'form': form,
+            'active_page': 'calculator',
+        })
+
+    pdf_file = request.FILES['pdf_file']
+    supplier = form.cleaned_data['supplier_name']
+    # Decimal → float so json.dumps can serialise them
+    raw_proto  = form.cleaned_data.get('price_prototype')
+    raw_series = form.cleaned_data.get('price_series')
+    price_proto  = float(raw_proto)  if raw_proto  else None
+    price_series = float(raw_series) if raw_series else None
+
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp:
+            tmp_path = tmp.name
+            for chunk in pdf_file.chunks():
+                tmp.write(chunk)
+        specs = parse_datasheet(tmp_path)
+    except Exception as exc:
+        form.add_error('pdf_file', f'Could not read PDF: {exc}')
+        return render(request, 'calculator/datasheet_upload.html', {
+            'form': form,
+            'active_page': 'calculator',
+        })
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+    datasheet = {
+        'supplier': supplier,
+        'price_prototype': price_proto,
+        'price_series': price_series,
+        'specs': specs,
+    }
+    datasheet_json = json.dumps(datasheet)
+
+    return render(request, 'calculator/datasheet_result.html', {
+        'datasheet': datasheet,
+        'datasheet_json': datasheet_json,
+        'form': DrivetrainForm(),
+        'save_form': SaveCalculationForm(),
         'active_page': 'calculator',
         **FORMULAS,
     })
@@ -98,6 +176,11 @@ def save_calculation(request):
             supplier_bevel_ratio=d.get('supplier_bevel_ratio'),
             supplier_worm_ratio=d.get('supplier_worm_ratio'),
         )
+        # Read prices from datasheet JSON if present
+        ds, _ = _load_datasheet(request.POST)
+        price_proto  = Decimal(str(ds['price_prototype']))  if ds and ds.get('price_prototype')  else None
+        price_series = Decimal(str(ds['price_series']))     if ds and ds.get('price_series')     else None
+
         MotorCalculation.objects.create(
             supplier_name=save_form.cleaned_data['supplier_name'],
             crane_type=save_form.cleaned_data['crane_type'],
@@ -115,13 +198,14 @@ def save_calculation(request):
             supplier_gearbox_rated_torque=d.get('supplier_gearbox_rated_torque'),
             supplier_bevel_ratio=d.get('supplier_bevel_ratio'),
             supplier_worm_ratio=d.get('supplier_worm_ratio'),
+            price_prototype=price_proto,
+            price_series=price_series,
             torque_check=results['torque_check'],
             torque_margin=results['torque_margin'],
             motor_power_kw=results['motor_power_kw'],
         )
         return redirect('suppliers')
 
-    # Validation failed — re-render calculator with errors
     results = None
     if calc_form.is_valid():
         d = calc_form.cleaned_data
@@ -129,10 +213,14 @@ def save_calculation(request):
             'crane_torque_max', 'crane_torque_nom', 'worm_ratio', 'worm_efficiency',
             'motor_speed', 'gearbox_output_speed', 'motor_rated_torque', 'starting_factor',
         )})
+
+    datasheet, datasheet_json = _load_datasheet(request.POST)
     return render(request, 'calculator/index.html', {
         'form': calc_form,
         'save_form': save_form,
         'results': results,
+        'datasheet': datasheet,
+        'datasheet_json': datasheet_json,
         'active_page': 'calculator',
         **FORMULAS,
     })

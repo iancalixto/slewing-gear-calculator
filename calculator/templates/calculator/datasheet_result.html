@@ -1,0 +1,170 @@
+{% extends 'calculator/base.html' %}
+{% load latexify %}
+
+{% block content %}
+<div class="row g-3">
+
+  {# ════ LEFT — DATASHEET SPECS ════ #}
+  <div class="col-xl-4 col-lg-5">
+
+    {# Supplier header #}
+    <div class="card shadow-sm mb-3 border-info">
+      <div class="card-header text-dark" style="background:#0dcaf0">
+        <i class="bi bi-filetype-pdf me-2"></i>
+        <strong>{{ datasheet.supplier }}</strong>
+      </div>
+      <div class="card-body p-2">
+        <div class="row g-1 small">
+          <div class="col-6">
+            <span class="text-muted">Prototype:</span><br>
+            <strong>{{ datasheet.price_prototype }}</strong>
+          </div>
+          <div class="col-6">
+            <span class="text-muted">Series (100 units):</span><br>
+            <strong>{{ datasheet.price_series }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Extracted specs table #}
+    <div class="card shadow-sm mb-3">
+      <div class="card-header bg-dark text-white small">
+        <i class="bi bi-table me-1"></i>Extracted Motor Specifications
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+          <tbody>
+            {% for label, value in datasheet.specs.items %}
+            <tr>
+              <td class="fw-semibold small ps-2" style="width:45%">{{ label }}</td>
+              {% if value == 'not in the datasheet' %}
+              <td class="text-muted fst-italic small">{{ value }}</td>
+              {% else %}
+              <td class="text-success small">{{ value }}</td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <a href="{% url 'upload_datasheet' %}" class="btn btn-outline-secondary btn-sm w-100 mb-3">
+      <i class="bi bi-arrow-left me-1"></i>Upload a different datasheet
+    </a>
+
+  </div>
+
+  {# ════ RIGHT — CALCULATION FORM ════ #}
+  <div class="col-xl-8 col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header bg-primary text-white d-flex align-items-center">
+        <i class="bi bi-sliders me-2"></i>Input Parameters
+      </div>
+      <div class="card-body">
+        <form method="post" action="{% url 'index' %}" id="calcForm" novalidate>
+          {% csrf_token %}
+
+          {# Pass datasheet data through to index view #}
+          <input type="hidden" name="datasheet_data" value="{{ datasheet_json }}">
+
+          <p class="section-label"><i class="bi bi-arrow-down-circle me-1"></i>Crane Load</p>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label mb-1">{{ form.crane_torque_max.label }}</label>
+              {{ form.crane_torque_max }}
+            </div>
+            <div class="col-6">
+              <label class="form-label mb-1">{{ form.crane_torque_nom.label }}</label>
+              {{ form.crane_torque_nom }}
+            </div>
+          </div>
+
+          <p class="section-label"><i class="bi bi-arrows-angle-contract me-1"></i>Worm Gear</p>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label mb-1">{{ form.worm_ratio.label }}</label>
+              {{ form.worm_ratio }}
+            </div>
+            <div class="col-6">
+              <label class="form-label mb-1">{{ form.worm_efficiency.label }}</label>
+              {{ form.worm_efficiency }}
+            </div>
+          </div>
+
+          <p class="section-label"><i class="bi bi-lightning-charge me-1"></i>Motor</p>
+          <div class="row g-2">
+            <div class="col-4">
+              <label class="form-label mb-1">{{ form.motor_speed.label }}</label>
+              {{ form.motor_speed }}
+            </div>
+            <div class="col-4">
+              <label class="form-label mb-1">{{ form.motor_rated_torque.label }}</label>
+              {{ form.motor_rated_torque }}
+            </div>
+            <div class="col-4">
+              <label class="form-label mb-1">{{ form.starting_factor.label }}</label>
+              {{ form.starting_factor }}
+            </div>
+          </div>
+
+          <p class="section-label"><i class="bi bi-gear me-1"></i>Bevel Gearbox</p>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label mb-1">{{ form.gearbox_output_speed.label }}</label>
+              {{ form.gearbox_output_speed }}
+            </div>
+          </div>
+
+          {# Supplier comparison data #}
+          <div class="mt-3">
+            <button class="btn btn-outline-secondary btn-sm w-100 d-flex justify-content-between align-items-center"
+                    type="button" data-bs-toggle="collapse" data-bs-target="#supplierSection">
+              <span><i class="bi bi-building me-1"></i>Supplier Data (optional)</span>
+              <i class="bi bi-chevron-down"></i>
+            </button>
+            <div class="collapse" id="supplierSection">
+              <div class="mt-2 p-2 bg-light rounded border">
+                <div class="row g-2">
+                  <div class="col-6">
+                    <label class="form-label mb-1">{{ form.supplier_motor_power_kw.label }}</label>
+                    {{ form.supplier_motor_power_kw }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1">{{ form.supplier_motor_rated_torque.label }}</label>
+                    {{ form.supplier_motor_rated_torque }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1">{{ form.supplier_motor_starting_torque.label }}</label>
+                    {{ form.supplier_motor_starting_torque }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1">{{ form.supplier_gearbox_rated_torque.label }}</label>
+                    {{ form.supplier_gearbox_rated_torque }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1">{{ form.supplier_bevel_ratio.label }}</label>
+                    {{ form.supplier_bevel_ratio }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1">{{ form.supplier_worm_ratio.label }}</label>
+                    {{ form.supplier_worm_ratio }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 d-grid">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-calculator me-1"></i>Calculate
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

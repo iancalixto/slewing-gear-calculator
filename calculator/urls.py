@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('upload/', views.upload_datasheet, name='upload_datasheet'),
     path('save/', views.save_calculation, name='save_calculation'),
     path('suppliers/', views.suppliers, name='suppliers'),
     path('suppliers/StandardPF/', views.suppliers, {'crane_filter': 'standard_pf'}, name='suppliers_standard_pf'),
