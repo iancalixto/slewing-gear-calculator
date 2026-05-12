@@ -1,0 +1,510 @@
+{% extends 'calculator/base.html' %}
+{% block content %}
+
+<div class="row g-3">
+
+  {# ═══════════════════════ LEFT — INPUT FORM ═══════════════════════ #}
+  <div class="col-xl-4 col-lg-5">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-primary text-white d-flex align-items-center">
+        <i class="bi bi-sliders me-2"></i>Input Parameters
+      </div>
+      <div class="card-body">
+        <form method="post" id="calcForm" novalidate>
+          {% csrf_token %}
+
+          <p class="section-label"><i class="bi bi-arrow-down-circle me-1"></i>Crane Load</p>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label mb-1">{{ form.crane_torque_max.label }}</label>
+              {{ form.crane_torque_max }}
+              {% if form.crane_torque_max.errors %}<div class="text-danger small">{{ form.crane_torque_max.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-6">
+              <label class="form-label mb-1">{{ form.crane_torque_nom.label }}</label>
+              {{ form.crane_torque_nom }}
+              {% if form.crane_torque_nom.errors %}<div class="text-danger small">{{ form.crane_torque_nom.errors|join:", " }}</div>{% endif %}
+            </div>
+          </div>
+
+          <p class="section-label"><i class="bi bi-arrows-angle-contract me-1"></i>Worm Gear</p>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label mb-1">{{ form.worm_ratio.label }}</label>
+              {{ form.worm_ratio }}
+              {% if form.worm_ratio.errors %}<div class="text-danger small">{{ form.worm_ratio.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-6">
+              <label class="form-label mb-1">{{ form.worm_efficiency.label }}</label>
+              {{ form.worm_efficiency }}
+              {% if form.worm_efficiency.errors %}<div class="text-danger small">{{ form.worm_efficiency.errors|join:", " }}</div>{% endif %}
+            </div>
+          </div>
+
+          <p class="section-label"><i class="bi bi-lightning-charge me-1"></i>Motor</p>
+          <div class="row g-2">
+            <div class="col-4">
+              <label class="form-label mb-1">{{ form.motor_speed.label }}</label>
+              {{ form.motor_speed }}
+              {% if form.motor_speed.errors %}<div class="text-danger small">{{ form.motor_speed.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-4">
+              <label class="form-label mb-1">{{ form.motor_rated_torque.label }}</label>
+              {{ form.motor_rated_torque }}
+              {% if form.motor_rated_torque.errors %}<div class="text-danger small">{{ form.motor_rated_torque.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-4">
+              <label class="form-label mb-1">{{ form.starting_factor.label }}</label>
+              {{ form.starting_factor }}
+              {% if form.starting_factor.errors %}<div class="text-danger small">{{ form.starting_factor.errors|join:", " }}</div>{% endif %}
+            </div>
+          </div>
+
+          <p class="section-label"><i class="bi bi-gear me-1"></i>Bevel Gearbox</p>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label mb-1">{{ form.gearbox_output_speed.label }}</label>
+              {{ form.gearbox_output_speed }}
+              {% if form.gearbox_output_speed.errors %}<div class="text-danger small">{{ form.gearbox_output_speed.errors|join:", " }}</div>{% endif %}
+            </div>
+          </div>
+
+          {# ── Supplier Data ── #}
+          <div class="mt-3">
+            <button class="btn btn-outline-secondary btn-sm w-100 d-flex justify-content-between align-items-center"
+                    type="button" data-bs-toggle="collapse" data-bs-target="#supplierSection">
+              <span><i class="bi bi-building me-1"></i>Supplier Data (optional — for checking)</span>
+              <i class="bi bi-chevron-down"></i>
+            </button>
+            <div class="collapse {% if results and results.supplier_checks %}show{% endif %}" id="supplierSection">
+              <div class="mt-2 p-2 bg-light rounded border">
+                <p class="section-label mb-2">Enter the supplier's nameplate / datasheet values to verify they meet the requirements.</p>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <label class="form-label mb-1">{{ form.supplier_motor_power_kw.label }}</label>
+                    {{ form.supplier_motor_power_kw }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1">{{ form.supplier_motor_rated_torque.label }}</label>
+                    {{ form.supplier_motor_rated_torque }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1">{{ form.supplier_motor_starting_torque.label }}</label>
+                    {{ form.supplier_motor_starting_torque }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1">{{ form.supplier_gearbox_rated_torque.label }}</label>
+                    {{ form.supplier_gearbox_rated_torque }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1">{{ form.supplier_bevel_ratio.label }}</label>
+                    {{ form.supplier_bevel_ratio }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1">{{ form.supplier_worm_ratio.label }}</label>
+                    {{ form.supplier_worm_ratio }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 d-grid gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-calculator me-1"></i>Calculate
+            </button>
+            <a href="/" class="btn btn-outline-secondary btn-sm">Reset to example values</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {# ═══════════════════════ RIGHT — RESULTS ═══════════════════════ #}
+  <div class="col-xl-8 col-lg-7">
+
+    {% if results %}
+    {# ── Motor feasibility banner ── #}
+    {% if results.torque_check == 'OK' %}
+    <div class="alert alert-success d-flex align-items-center mb-3 py-2">
+      <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+      <strong>Motor suitable</strong>&nbsp;— starting torque margin {{ results.torque_margin }}× (≥ 1.3 required)
+    </div>
+    {% elif results.torque_check == 'Marginal' %}
+    <div class="alert alert-warning d-flex align-items-center mb-3 py-2">
+      <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+      <strong>On the limit</strong>&nbsp;— starting torque margin {{ results.torque_margin }}× (1.1–1.3 — not recommended)
+    </div>
+    {% else %}
+    <div class="alert alert-danger d-flex align-items-center mb-3 py-2">
+      <i class="bi bi-x-circle-fill me-2 fs-5"></i>
+      <strong>Motor too small</strong>&nbsp;— starting torque margin {{ results.torque_margin }}× (&lt; 1.1) — choose a larger motor
+    </div>
+    {% endif %}
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header bg-dark text-white">
+        <i class="bi bi-table me-2"></i>Calculation Steps
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Step</th>
+              <th>Parameter</th>
+              <th>Symbol</th>
+              <th class="text-end">Value</th>
+              <th>Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="result-row">
+              <td><span class="step-badge">1</span></td>
+              <td>Worm shaft torque (max)</td>
+              <td><code>M₂_Max</code></td>
+              <td class="text-end">{{ results.worm_input_torque_max }}</td>
+              <td>Nm</td>
+            </tr>
+            <tr class="result-row">
+              <td><span class="step-badge">2</span></td>
+              <td>Worm shaft torque (nominal)</td>
+              <td><code>M₂_Nenn</code></td>
+              <td class="text-end">{{ results.worm_input_torque_nom }}</td>
+              <td>Nm</td>
+            </tr>
+            <tr class="result-row">
+              <td><span class="step-badge">3</span></td>
+              <td>Required gearbox torque</td>
+              <td><code>M_gear_req</code></td>
+              <td class="text-end">{{ results.gearbox_required_torque }}</td>
+              <td>Nm</td>
+            </tr>
+            <tr class="result-row">
+              <td><span class="step-badge">4</span></td>
+              <td>Bevel gearbox ratio</td>
+              <td><code>i_bevel</code></td>
+              <td class="text-end">{{ results.bevel_ratio }}</td>
+              <td>—</td>
+            </tr>
+            <tr class="result-row">
+              <td><span class="step-badge">5</span></td>
+              <td>Slewing speed</td>
+              <td><code>n_slew</code></td>
+              <td class="text-end">{{ results.slewing_speed_rpm }}</td>
+              <td>rpm</td>
+            </tr>
+            <tr class="result-row">
+              <td><span class="step-badge">6</span></td>
+              <td>Motor torque required</td>
+              <td><code>M_motor_req</code></td>
+              <td class="text-end">{{ results.motor_torque_required }}</td>
+              <td>Nm</td>
+            </tr>
+            <tr class="result-row">
+              <td><span class="step-badge">7</span></td>
+              <td>Motor starting torque available</td>
+              <td><code>M_start</code></td>
+              <td class="text-end">{{ results.motor_start_torque }}</td>
+              <td>Nm</td>
+            </tr>
+            <tr class="result-row {% if results.torque_check == 'OK' %}table-success{% elif results.torque_check == 'Marginal' %}table-warning{% else %}table-danger{% endif %}">
+              <td><span class="step-badge">8</span></td>
+              <td>Torque check</td>
+              <td><code>margin</code></td>
+              <td class="text-end">{{ results.torque_margin }}×</td>
+              <td>
+                {% if results.torque_check == 'OK' %}
+                  <span class="badge badge-ok">OK</span>
+                {% elif results.torque_check == 'Marginal' %}
+                  <span class="badge badge-marginal">Marginal</span>
+                {% else %}
+                  <span class="badge badge-fail">Too small</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr class="result-row">
+              <td><span class="step-badge">9</span></td>
+              <td>Motor power required</td>
+              <td><code>P_motor</code></td>
+              <td class="text-end">{{ results.motor_power_kw }}</td>
+              <td>kW</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# ── Supplier checks ── #}
+    {% if results.supplier_checks %}
+    <div class="card shadow-sm mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between
+        {% if results.supplier_overall == 'ALL OK' %}bg-success text-white
+        {% elif results.supplier_overall == 'MARGINAL' %}bg-warning
+        {% else %}bg-danger text-white{% endif %}">
+        <span><i class="bi bi-clipboard-check me-2"></i>Supplier Data Check</span>
+        <span class="badge overall-badge
+          {% if results.supplier_overall == 'ALL OK' %}bg-light text-success
+          {% elif results.supplier_overall == 'MARGINAL' %}bg-light text-warning
+          {% else %}bg-light text-danger{% endif %}">
+          {{ results.supplier_overall }}
+        </span>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Parameter</th>
+              <th class="text-end">Supplied</th>
+              <th class="text-end">Required / Calculated</th>
+              <th class="text-end">Margin / Deviation</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in results.supplier_checks %}
+            <tr class="supplier-check-row {% if c.status == 'OK' %}table-success{% elif c.status == 'Marginal' %}table-warning{% else %}table-danger{% endif %}">
+              <td>{{ c.label }}</td>
+              <td class="text-end font-monospace">{{ c.supplied }}</td>
+              <td class="text-end font-monospace">
+                {% if c.required is not None %}{{ c.required }}{% else %}{{ c.calculated }}{% endif %}
+              </td>
+              <td class="text-end font-monospace">
+                {% if c.margin is not None %}{{ c.margin }}×{% else %}{{ c.deviation_pct }}%{% endif %}
+              </td>
+              <td>
+                {% if c.status == 'OK' %}<span class="badge badge-ok">OK</span>
+                {% elif c.status == 'Marginal' %}<span class="badge badge-marginal">Marginal</span>
+                {% else %}<span class="badge badge-fail">{{ c.status }}</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="card shadow-sm">
+      <div class="card-body text-center py-5 text-muted">
+        <i class="bi bi-arrow-left-circle fs-1 mb-3 d-block"></i>
+        Fill in the input parameters and press <strong>Calculate</strong>.<br>
+        <small>The form is pre-filled with the Z-Systems example (62 kNm crane, worm ratio 150).</small>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>{# end right col #}
+</div>{# end row #}
+
+{# ═══════════════════════ FORMULA REFERENCE ═══════════════════════ #}
+<div class="row mt-3">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header bg-secondary text-white"
+           style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#formulaSection">
+        <i class="bi bi-journal-code me-2"></i>Formula Reference
+        <span class="float-end small">(click to expand/collapse)</span>
+      </div>
+      <div class="collapse" id="formulaSection">
+        <div class="card-body">
+          <p class="text-muted small mb-3">
+            Complete drivetrain sizing chain: Motor → Bevel Gearbox → Worm Gear → Slewing Ring.
+            Based on the Palfinger / Z-Systems sizing sheets.
+          </p>
+          <div class="row g-3">
+
+            {# Step 1 #}
+            <div class="col-md-6 col-xl-4">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <p class="fw-bold mb-1"><span class="step-badge">1</span>Worm shaft torque — maximum</p>
+                  <div class="formula-box">
+<span class="comment"># M_Max = max crane slewing torque (Nm)</span>
+<span class="comment"># i_worm = worm gear ratio</span>
+<span class="comment"># η     = worm gear efficiency (0–1)</span>
+
+<span class="var">M2_Max</span> <span class="op">=</span> <span class="var">M_Max</span> <span class="op">/</span> (<span class="var">i_worm</span> <span class="op">×</span> <span class="var">η</span>)
+                  </div>
+                  <p class="small text-muted mt-2 mb-0">
+                    Reflects the full peak torque the worm shaft must transmit.
+                    Worm efficiency typically 0.35–0.50 for single-start worms.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {# Step 2 #}
+            <div class="col-md-6 col-xl-4">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <p class="fw-bold mb-1"><span class="step-badge">2</span>Worm shaft torque — nominal</p>
+                  <div class="formula-box">
+<span class="comment"># M_Nenn = nominal (continuous) crane torque</span>
+
+<span class="var">M2_Nenn</span> <span class="op">=</span> <span class="var">M_Nenn</span> <span class="op">/</span> (<span class="var">i_worm</span> <span class="op">×</span> <span class="var">η</span>)
+                  </div>
+                  <p class="small text-muted mt-2 mb-0">
+                    Used for thermal / continuous-duty sizing of the gearbox.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {# Step 3 #}
+            <div class="col-md-6 col-xl-4">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <p class="fw-bold mb-1"><span class="step-badge">3</span>Required gearbox torque</p>
+                  <div class="formula-box">
+<span class="comment"># S_f = safety factor = 1.34 (Z-Systems)</span>
+
+<span class="var">M_gear_req</span> <span class="op">=</span> <span class="var">M2_Nenn</span> <span class="op">×</span> <span class="num">1.34</span>
+                  </div>
+                  <p class="small text-muted mt-2 mb-0">
+                    The bevel gearbox catalogue torque rating must be ≥ M_gear_req.
+                    Example: ZK4 rated 760 Nm &gt; 517 Nm required.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {# Step 4 #}
+            <div class="col-md-6 col-xl-4">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <p class="fw-bold mb-1"><span class="step-badge">4</span>Bevel gearbox ratio</p>
+                  <div class="formula-box">
+<span class="comment"># n_motor    = motor speed (rpm)</span>
+<span class="comment"># n_gear_out = bevel output shaft speed (rpm)</span>
+
+<span class="var">i_bevel</span> <span class="op">=</span> <span class="var">n_motor</span> <span class="op">/</span> <span class="var">n_gear_out</span>
+                  </div>
+                  <p class="small text-muted mt-2 mb-0">
+                    The bevel gearbox reduces motor speed to the worm input shaft speed.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {# Step 5 #}
+            <div class="col-md-6 col-xl-4">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <p class="fw-bold mb-1"><span class="step-badge">5</span>Slewing speed</p>
+                  <div class="formula-box">
+<span class="comment"># n_gear_out = bevel output = worm input speed</span>
+
+<span class="var">n_slew</span> <span class="op">=</span> <span class="var">n_gear_out</span> <span class="op">/</span> <span class="var">i_worm</span>
+                  </div>
+                  <p class="small text-muted mt-2 mb-0">
+                    Final crane rotation speed in rpm.
+                    Typical target: 0.25–0.35 rpm for offshore cranes.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {# Step 6 #}
+            <div class="col-md-6 col-xl-4">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <p class="fw-bold mb-1"><span class="step-badge">6</span>Motor torque required</p>
+                  <div class="formula-box">
+<span class="comment"># Back-calculated from worm max input torque</span>
+
+<span class="var">M_motor_req</span> <span class="op">=</span> <span class="var">M2_Max</span> <span class="op">/</span> <span class="var">i_bevel</span>
+                  </div>
+                  <p class="small text-muted mt-2 mb-0">
+                    The motor must be able to produce this starting torque to
+                    move the crane under peak load.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {# Step 7 #}
+            <div class="col-md-6 col-xl-4">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <p class="fw-bold mb-1"><span class="step-badge">7</span>Motor starting torque available</p>
+                  <div class="formula-box">
+<span class="comment"># M_n     = motor rated (nameplate) torque</span>
+<span class="comment"># Ma/Mn   = locked-rotor / rated torque ratio</span>
+
+<span class="var">M_start</span> <span class="op">=</span> <span class="var">M_n</span> <span class="op">×</span> (<span class="var">Ma</span><span class="op">/</span><span class="var">Mn</span>)
+                  </div>
+                  <p class="small text-muted mt-2 mb-0">
+                    For IEC motors Ma/Mn is typically 2.0–3.5 for standard
+                    induction motors and up to 4+ for high-torque designs.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {# Step 8 #}
+            <div class="col-md-6 col-xl-4">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <p class="fw-bold mb-1"><span class="step-badge">8</span>Torque feasibility check</p>
+                  <div class="formula-box">
+<span class="var">margin</span> <span class="op">=</span> <span class="var">M_start</span> <span class="op">/</span> <span class="var">M_motor_req</span>
+
+<span class="comment"># margin ≥ 1.3  →  OK</span>
+<span class="comment"># margin ≥ 1.1  →  Marginal (not recommended)</span>
+<span class="comment"># margin &lt;  1.1  →  Too small → choose bigger motor</span>
+                  </div>
+                  <p class="small text-muted mt-2 mb-0">
+                    The 1.3× margin accounts for supply-voltage dip, temperature,
+                    bearing stiction, and manufacturing tolerances.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {# Step 9 #}
+            <div class="col-md-6 col-xl-4">
+              <div class="card border-0 bg-light h-100">
+                <div class="card-body">
+                  <p class="fw-bold mb-1"><span class="step-badge">9</span>Motor power required</p>
+                  <div class="formula-box">
+<span class="comment"># 9550 = 60 × 1000 / (2π) — unit conversion constant</span>
+<span class="comment"># P in kW, M in Nm, n in rpm</span>
+
+<span class="var">P_motor</span> <span class="op">=</span> (<span class="var">M_motor_req</span> <span class="op">×</span> <span class="var">n_motor</span>) <span class="op">/</span> <span class="num">9550</span>
+                  </div>
+                  <p class="small text-muted mt-2 mb-0">
+                    Minimum nameplate kW rating of the selected motor.
+                    Always round <em>up</em> to the next standard IEC frame size.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          </div>{# end formula row #}
+
+          <hr class="my-3">
+          <h6 class="fw-semibold">Supplier Data Check Criteria</h6>
+          <div class="row g-2 small text-muted">
+            <div class="col-md-6">
+              <ul class="mb-0">
+                <li><strong>Torque / power values</strong>: supplier value ÷ required ≥ 1.10 → OK, ≥ 1.00 → Marginal, &lt; 1.00 → Too small</li>
+                <li><strong>Ratio values</strong>: |supplier − calculated| ÷ calculated ≤ 2% → OK, otherwise Mismatch</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <ul class="mb-0">
+                <li><strong>Motor starting torque</strong> checked against M_motor_req (Step 6)</li>
+                <li><strong>Gearbox torque</strong> checked against M_gear_req (Step 3)</li>
+                <li><strong>Motor power</strong> checked against P_motor (Step 9)</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
