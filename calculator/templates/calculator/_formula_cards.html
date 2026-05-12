@@ -145,6 +145,73 @@
 
 <hr class="my-4">
 
+{# ── Gearbox Sizing (load spectrum method) ── #}
+<h6 class="fw-semibold mb-1"><i class="bi bi-gear-fill me-2"></i>Gearbox Sizing — Load Spectrum Method</h6>
+<p class="text-muted small mb-3">Optional calculation — requires nominal crane torque <code>M_Nenn</code>. Determines the required gearbox nominal torque rating using the actual load spectrum rather than a fixed safety factor.</p>
+<div class="row g-3 mb-4">
+
+  <div class="col-md-6 col-xl-3">
+    <div class="formula-card">
+      <div class="formula-body">
+        <p class="fw-bold mb-1"><span class="step-badge" style="background:#6f42c1">GB1</span>Gearbox torque — nominal</p>
+        <div class="formula-display">{% latexify fg1 math_block=True %}</div>
+        <div class="formula-vars">
+          <code>M_nom</code> nominal crane torque [Nm]<br>
+          Same as drivetrain Step 2.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-xl-3">
+    <div class="formula-card">
+      <div class="formula-body">
+        <p class="fw-bold mb-1"><span class="step-badge" style="background:#6f42c1">GB2</span>Gearbox torque — maximum</p>
+        <div class="formula-display">{% latexify fg2 math_block=True %}</div>
+        <div class="formula-vars">
+          <code>M_max</code> maximum crane torque [Nm]<br>
+          Same as drivetrain Step 1.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-xl-3">
+    <div class="formula-card">
+      <div class="formula-body">
+        <p class="fw-bold mb-1"><span class="step-badge" style="background:#6f42c1">GB3</span>Load spectrum ratio</p>
+        <div class="formula-display">{% latexify fg3 math_block=True %}</div>
+        <div class="formula-vars">
+          <code>λ</code> dimensionless ratio between nominal and maximum gearbox torque.<br>
+          λ = 1 means pure peak load; λ → 0 means rarely loaded.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-xl-3">
+    <div class="formula-card">
+      <div class="formula-body">
+        <p class="fw-bold mb-1"><span class="step-badge" style="background:#6f42c1">GB4</span>Required gearbox nominal torque</p>
+        <div class="formula-display">{% latexify fg4 math_block=True %}</div>
+        <div class="formula-display mt-1">{% latexify fg4_exp math_block=True %}</div>
+        <div class="formula-vars mt-2">
+          <code>M_gear,soll</code> = required catalogue nominal torque rating [Nm]<br>
+          Select a gearbox with rated torque ≥ <code>M_gear,soll</code>.
+        </div>
+        <p class="formula-note">
+          Compared to the simple safety-factor method (M2_nom × 1.34), this approach
+          accounts for the actual duty cycle, giving a more accurate — sometimes higher,
+          sometimes lower — required rating.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<hr class="my-4">
+
 <h6 class="fw-semibold mb-3"><i class="bi bi-clipboard-check me-2"></i>Supplier Data Check Criteria</h6>
 <div class="row g-3">
   <div class="col-md-6">

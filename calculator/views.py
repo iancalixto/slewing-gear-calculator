@@ -13,12 +13,26 @@ FORMULAS = {
     'f6':  r'M_{\text{motor,req}} = \dfrac{M_{2,\max}}{i_{\text{bevel}}}',
     'f7':  r'M_{\text{start}} = M_n \cdot k_{\text{start}}, \qquad k_{\text{start}} = \dfrac{M_a}{M_n}',
     'f8':  r'\text{margin} = \dfrac{M_{\text{start}}}{M_{\text{motor,req}}}',
-    'f8c': r'\begin{cases} \text{margin} \geq 1.3 & \Rightarrow \textbf{OK} \\ '
-           r'1.1 \leq \text{margin} < 1.3 & \Rightarrow \textbf{Marginal} \\ '
-           r'\text{margin} < 1.1 & \Rightarrow \textbf{Too small} \end{cases}',
+    'f8c': (
+        r'\begin{cases}'
+        r'M_{\text{start}} > M_{\text{motor,req}} & \Rightarrow \textbf{OK} \\'
+        r'M_{\text{motor,req}} \leq M_{\text{start}} + 2\,\text{Nm} & \Rightarrow \textbf{On\;the\;limit} \\'
+        r'M_{\text{motor,req}} > M_{\text{start}} + 2\,\text{Nm} & \Rightarrow \textbf{Too\;small}'
+        r'\end{cases}'
+    ),
     'f9':     r'P_{\text{rated}}\,[\text{kW}] = \dfrac{M_n\,[\text{Nm}] \cdot n_{\text{motor}}\,[\text{rpm}]}{9550}',
     'f9_inv': r'M_n\,[\text{Nm}] = \dfrac{9550 \times P_{\text{rated}}\,[\text{kW}]}{n_{\text{motor}}\,[\text{rpm}]}',
     'f9b':    r'9550 = \dfrac{60 \times 10^3}{2\pi} \approx 9549.3',
+    # Gearbox sizing (load spectrum method) — optional, requires M_Nenn
+    'fg1': r'M_{2,\text{nom}} = \dfrac{M_{\text{nom}}}{i_{\text{worm}} \cdot \eta}',
+    'fg2': r'M_{2,\max} = \dfrac{M_{\max}}{i_{\text{worm}} \cdot \eta}',
+    'fg3': r'\lambda = \dfrac{M_{2,\text{nom}}}{M_{2,\max}}',
+    'fg4': r'M_{\text{gear,soll}} = M_{2,\text{nom}} + \left(M_{2,\max} - M_{2,\text{nom}}\right) \cdot \lambda',
+    'fg4_exp': (
+        r'M_{\text{gear,soll}} = M_{2,\text{nom}} + '
+        r'\left(M_{2,\max} - M_{2,\text{nom}}\right) \cdot '
+        r'\dfrac{M_{2,\text{nom}}}{M_{2,\max}}'
+    ),
     'fs_margin': r'\text{margin} = \dfrac{\text{value}_{\text{supplier}}}{\text{value}_{\text{required}}} \geq 1.10',
     'fs_ratio':  r'\text{deviation} = \dfrac{|\,r_{\text{supplier}} - r_{\text{calc}}\,|}{r_{\text{calc}}} \leq 2\%',
 }

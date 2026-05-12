@@ -90,12 +90,17 @@ def drivetrain_sizing(
     r['motor_start_torque'] = motor_rated_torque * starting_factor
 
     # Step 8 — Torque feasibility check
-    margin = r['motor_start_torque'] / r['motor_torque_required']
-    r['torque_margin'] = margin
-    if margin >= 1.3:
+    # S15 = M_start (available), S21 = M_motor_req (required)
+    # OK         : S15 > S21
+    # On the limit: S21 <= S15 + 2  (required is within 2 Nm of available)
+    # Too small  : S21 > S15 + 2
+    S15 = r['motor_start_torque']
+    S21 = r['motor_torque_required']
+    r['torque_margin'] = S15 / S21  # ratio kept for display
+    if S15 > S21:
         r['torque_check'] = 'OK'
-    elif margin >= 1.1:
-        r['torque_check'] = 'Marginal'
+    elif S21 <= S15 + 2:
+        r['torque_check'] = 'On the limit'
     else:
         r['torque_check'] = 'Too small'
 
@@ -104,6 +109,22 @@ def drivetrain_sizing(
     # M_n is the rated torque from the motor nameplate, not the back-calculated
     # required torque. This gives the standard IEC power class of the motor.
     r['motor_power_kw'] = (motor_rated_torque * motor_speed) / 9550
+
+    # ── Optional gearbox sizing (load spectrum method) ───────────────────────
+    # Requires crane_torque_nom (M_Nenn). Uses M2_Nenn and M2_Max already
+    # computed in Steps 1 and 2.
+    if crane_torque_nom is not None:
+        M2n = r['worm_input_torque_nom']   # M2_Nenn
+        M2a = r['worm_input_torque_max']   # M2_Max
+        # Step GB-3: load spectrum ratio  λ = M2_Nenn / M2_Max
+        lam = M2n / M2a
+        # Step GB-4: required gearbox nominal torque
+        M_soll = M2n + (M2a - M2n) * lam
+        r['gb_load_spectrum_ratio'] = round(lam, 4)
+        r['gb_sizing_torque'] = round(M_soll, 3)
+    else:
+        r['gb_load_spectrum_ratio'] = None
+        r['gb_sizing_torque'] = None
 
     # ── Supplier data checks ─────────────────────────────────────────────────
     supplier_checks = []
