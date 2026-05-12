@@ -1,0 +1,221 @@
+{% extends 'calculator/base.html' %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h5 class="text-white mb-0"><i class="bi bi-table me-2"></i>Motor Comparison</h5>
+  <div class="btn-group btn-group-sm" role="group">
+    <a href="{% url 'comparison' %}"
+       class="btn {% if not crane_filter %}btn-primary{% else %}btn-outline-secondary text-white{% endif %}">
+      All
+    </a>
+    <a href="{% url 'comparison' %}?crane=standard_pf"
+       class="btn {% if crane_filter == 'standard_pf' %}btn-primary{% else %}btn-outline-secondary text-white{% endif %}">
+      <i class="bi bi-crane me-1"></i>Standard PF
+    </a>
+    <a href="{% url 'comparison' %}?crane=pf_xxl"
+       class="btn {% if crane_filter == 'pf_xxl' %}btn-primary{% else %}btn-outline-secondary text-white{% endif %}">
+      <i class="bi bi-arrows-fullscreen me-1"></i>PF-XXL
+    </a>
+  </div>
+</div>
+
+{% if calculations %}
+
+{# ── Overview table ── #}
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-dark text-white small">
+    <i class="bi bi-sliders me-1"></i>Drivetrain Parameters &amp; Torque Check
+  </div>
+  <div class="card-body p-0" style="overflow-x:auto">
+    <table class="table table-sm table-hover mb-0" style="min-width:900px">
+      <thead class="table-light">
+        <tr>
+          <th>Supplier</th>
+          <th>Crane</th>
+          <th class="text-end">Power (kW)</th>
+          <th class="text-end">M_n (Nm)</th>
+          <th class="text-end">n (rpm)</th>
+          <th class="text-end">Ma/Mn</th>
+          <th class="text-end">M_worm_max (Nm)</th>
+          <th class="text-end">Torque Margin</th>
+          <th>Check</th>
+          <th class="text-end">Proto (€)</th>
+          <th class="text-end">Series (€)</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in calculations %}
+        <tr class="{% if c.torque_check == 'OK' %}table-success{% elif c.torque_check == 'Marginal' %}table-warning{% else %}table-danger{% endif %}">
+          <td class="fw-semibold">
+            <a href="{% url 'supplier_detail' c.pk %}" class="text-decoration-none">{{ c.supplier_name }}</a>
+          </td>
+          <td>
+            {% if c.crane_type == 'standard_pf' %}
+              <span class="badge bg-primary" style="font-size:.65rem">Standard PF</span>
+            {% else %}
+              <span class="badge bg-info text-dark" style="font-size:.65rem">PF-XXL</span>
+            {% endif %}
+          </td>
+          <td class="text-end font-monospace">{{ c.motor_power_kw|floatformat:2 }}</td>
+          <td class="text-end font-monospace">{{ c.motor_rated_torque|floatformat:1 }}</td>
+          <td class="text-end font-monospace">{{ c.motor_speed|floatformat:0 }}</td>
+          <td class="text-end font-monospace">{{ c.starting_factor|floatformat:2 }}</td>
+          <td class="text-end font-monospace">{{ c.crane_torque_max|floatformat:0 }}</td>
+          <td class="text-end font-monospace fw-bold">{{ c.torque_margin|floatformat:2 }}×</td>
+          <td>
+            {% if c.torque_check == 'OK' %}
+              <span class="badge bg-success">OK</span>
+            {% elif c.torque_check == 'Marginal' %}
+              <span class="badge bg-warning text-dark">Marginal</span>
+            {% else %}
+              <span class="badge bg-danger">Fail</span>
+            {% endif %}
+          </td>
+          <td class="text-end font-monospace">
+            {% if c.price_prototype %}€{{ c.price_prototype }}{% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="text-end font-monospace">
+            {% if c.price_series %}€{{ c.price_series }}{% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td>
+            <a href="{% url 'supplier_detail' c.pk %}" class="btn btn-outline-secondary btn-sm py-0 px-1">
+              <i class="bi bi-eye"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Motor Specifications comparison ── #}
+<div class="card shadow-sm mb-4">
+  <div class="card-header text-white small" style="background:#6f42c1">
+    <i class="bi bi-clipboard-check me-1"></i>Motor Specification Compliance (PF Crane Requirements)
+  </div>
+  <div class="card-body p-0" style="overflow-x:auto">
+    <table class="table table-sm mb-0" style="min-width:1100px">
+      <thead class="table-light">
+        <tr>
+          <th style="min-width:160px">Supplier</th>
+          <th style="min-width:110px">Frame Material<br><small class="text-muted fw-normal">req: Cast Iron</small></th>
+          <th style="min-width:90px">Flange<br><small class="text-muted fw-normal">req: Ø165mm</small></th>
+          <th style="min-width:90px">Shaft<br><small class="text-muted fw-normal">req: Ø32k6</small></th>
+          <th style="min-width:100px">Cooling<br><small class="text-muted fw-normal">req: IC410</small></th>
+          <th style="min-width:80px">IP<br><small class="text-muted fw-normal">req: IP66</small></th>
+          <th style="min-width:110px">Amb. Temp<br><small class="text-muted fw-normal">req: −20°C</small></th>
+          <th style="min-width:110px">Coating<br><small class="text-muted fw-normal">req: C5H</small></th>
+          <th style="min-width:80px">Color<br><small class="text-muted fw-normal">RAL7035</small></th>
+          <th style="min-width:90px">Heater<br><small class="text-muted fw-normal">24VDC</small></th>
+          <th style="min-width:80px">Insul. Cl.</th>
+          <th style="min-width:80px">Duty Cycle</th>
+          <th style="min-width:80px">Certificate</th>
+          <th style="min-width:70px">Weight</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in calculations %}
+        <tr>
+          <td class="fw-semibold small">{{ c.supplier_name }}</td>
+
+          {# Frame Material #}
+          {% with v=c.spec_frame_material %}
+          <td class="small {% if v %}{% if 'cast' in v|lower or 'gjl' in v|lower or 'gg' in v|lower %}table-success{% else %}table-danger{% endif %}{% endif %}">
+            {{ v|default:"—" }}
+          </td>
+          {% endwith %}
+
+          {# Output Flange #}
+          {% with v=c.spec_output_flange %}
+          <td class="small {% if v %}{% if '165' in v %}table-success{% else %}table-danger{% endif %}{% endif %}">
+            {{ v|default:"—" }}
+          </td>
+          {% endwith %}
+
+          {# Shaft #}
+          {% with v=c.spec_shaft %}
+          <td class="small {% if v %}{% if '32k6' in v|lower %}table-success{% else %}table-danger{% endif %}{% endif %}">
+            {{ v|default:"—" }}
+          </td>
+          {% endwith %}
+
+          {# Cooling #}
+          {% with v=c.spec_cooling_method %}
+          <td class="small {% if v %}{% if 'ic' in v|lower or 'tenv' in v|lower %}table-success{% else %}table-danger{% endif %}{% endif %}">
+            {{ v|default:"—" }}
+          </td>
+          {% endwith %}
+
+          {# IP Rating #}
+          {% with v=c.spec_ip_rating %}
+          <td class="small {% if v %}{% if 'ip66' in v|lower or 'ip 66' in v|lower %}table-success{% else %}table-danger{% endif %}{% endif %}">
+            {{ v|default:"—" }}
+          </td>
+          {% endwith %}
+
+          {# Ambient Temp #}
+          {% with v=c.spec_ambient_temp %}
+          <td class="small {% if v %}{% if '-20' in v %}table-success{% else %}table-danger{% endif %}{% endif %}">
+            {{ v|default:"—" }}
+          </td>
+          {% endwith %}
+
+          {# Coating #}
+          {% with v=c.spec_coating %}
+          <td class="small {% if v %}{% if 'c5' in v|lower or '12944' in v %}table-success{% else %}table-danger{% endif %}{% endif %}">
+            {{ v|default:"—" }}
+          </td>
+          {% endwith %}
+
+          {# Top Color #}
+          {% with v=c.spec_top_color %}
+          <td class="small {% if v %}{% if 'ral' in v|lower and '7035' in v %}table-success{% else %}table-danger{% endif %}{% endif %}">
+            {{ v|default:"—" }}
+          </td>
+          {% endwith %}
+
+          {# Heater #}
+          {% with v=c.spec_heater %}
+          <td class="small {% if v %}{% if '24' in v %}table-success{% else %}table-danger{% endif %}{% endif %}">
+            {{ v|default:"—" }}
+          </td>
+          {% endwith %}
+
+          {# Insulation Class #}
+          <td class="small">{{ c.spec_insulation_class|default:"—" }}</td>
+
+          {# Duty Cycle #}
+          <td class="small">{{ c.spec_duty_cycle|default:"—" }}</td>
+
+          {# Certificate #}
+          <td class="small">{{ c.spec_motor_certificate|default:"—" }}</td>
+
+          {# Weight #}
+          <td class="small">
+            {% if c.spec_weight_kg %}{{ c.spec_weight_kg|floatformat:1 }} kg{% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer small text-muted py-1">
+    <span class="badge bg-success me-1">&nbsp;</span>Meets requirement
+    <span class="badge bg-danger ms-2 me-1">&nbsp;</span>Does not meet requirement
+    <span class="text-muted ms-2">— = not entered</span>
+  </div>
+</div>
+
+{% else %}
+<div class="card shadow-sm">
+  <div class="card-body text-center py-5 text-muted">
+    <i class="bi bi-inbox fs-1 mb-3 d-block"></i>
+    No saved calculations yet.
+    <a href="{% url 'index' %}" class="d-block mt-2">Go to Calculator</a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

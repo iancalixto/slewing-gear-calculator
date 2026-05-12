@@ -4,27 +4,35 @@
 {% block content %}
 <div class="row g-3">
 
-  {# ════ LEFT — DATASHEET SPECS ════ #}
+  {# ════ LEFT — DATASHEET SPECS + COMPLIANCE ════ #}
   <div class="col-xl-4 col-lg-5">
 
     {# Supplier header #}
     <div class="card shadow-sm mb-3 border-info">
-      <div class="card-header text-dark" style="background:#0dcaf0">
-        <i class="bi bi-filetype-pdf me-2"></i>
-        <strong>{{ datasheet.supplier }}</strong>
+      <div class="card-header text-dark d-flex align-items-center justify-content-between"
+           style="background:#0dcaf0">
+        <span>
+          <i class="bi bi-filetype-pdf me-2"></i>
+          <strong>{{ datasheet.supplier }}</strong>
+          {% if datasheet.crane_type %}
+          &nbsp;<span class="badge bg-dark" style="font-size:.65rem">{{ datasheet.crane_type }}</span>
+          {% endif %}
+        </span>
       </div>
+      {% if datasheet.price_prototype or datasheet.price_series %}
       <div class="card-body p-2">
         <div class="row g-1 small">
           <div class="col-6">
             <span class="text-muted">Prototype:</span><br>
-            <strong>{{ datasheet.price_prototype }}</strong>
+            <strong>€{{ datasheet.price_prototype|default:"—" }}</strong>
           </div>
           <div class="col-6">
             <span class="text-muted">Series (100 units):</span><br>
-            <strong>{{ datasheet.price_series }}</strong>
+            <strong>€{{ datasheet.price_series|default:"—" }}</strong>
           </div>
         </div>
       </div>
+      {% endif %}
     </div>
 
     {# Extracted specs table #}
@@ -49,6 +57,56 @@
         </table>
       </div>
     </div>
+
+    {# Compliance check panel #}
+    {% if compliance %}
+    <div class="card shadow-sm mb-3">
+      <div class="card-header small d-flex align-items-center justify-content-between"
+           style="background:#212529;color:#fff">
+        <span><i class="bi bi-clipboard-check me-1"></i>PF Crane Compliance</span>
+        <span>
+          {% for c in compliance %}
+            {% if c.status == 'PASS' %}<span class="badge compliance-pass" style="font-size:.6rem">✓</span>
+            {% elif c.status == 'FAIL' %}<span class="badge compliance-fail" style="font-size:.6rem">✗</span>
+            {% else %}<span class="badge compliance-unknown" style="font-size:.6rem">?</span>
+            {% endif %}
+          {% endfor %}
+        </span>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width:40%">Parameter</th>
+              <th>Required</th>
+              <th style="width:15%">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in compliance %}
+            <tr class="{% if c.status == 'PASS' %}table-success{% elif c.status == 'FAIL' %}table-danger{% else %}table-secondary{% endif %}">
+              <td class="small fw-semibold">{{ c.label }}</td>
+              <td class="small text-muted">{{ c.required }}</td>
+              <td>
+                {% if c.status == 'PASS' %}
+                  <span class="badge compliance-pass" style="font-size:.65rem">PASS</span>
+                {% elif c.status == 'FAIL' %}
+                  <span class="badge compliance-fail" style="font-size:.65rem">FAIL</span>
+                {% else %}
+                  <span class="badge compliance-unknown" style="font-size:.65rem">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer small text-muted py-1">
+        <i class="bi bi-info-circle me-1"></i>
+        UNKNOWN = not found in PDF. Enter manually in the form →
+      </div>
+    </div>
+    {% endif %}
 
     <a href="{% url 'upload_datasheet' %}" class="btn btn-outline-secondary btn-sm w-100 mb-3">
       <i class="bi bi-arrow-left me-1"></i>Upload a different datasheet
@@ -114,6 +172,86 @@
             <div class="col-6">
               <label class="form-label mb-1">{{ form.gearbox_output_speed.label }}</label>
               {{ form.gearbox_output_speed }}
+            </div>
+          </div>
+
+          {# Motor Specifications — pre-filled from PDF, editable #}
+          <div class="mt-3">
+            <button class="btn btn-outline-warning btn-sm w-100 d-flex justify-content-between align-items-center"
+                    type="button" data-bs-toggle="collapse" data-bs-target="#specsSection">
+              <span><i class="bi bi-clipboard-check me-1"></i>Motor Specifications
+                {% if compliance %}
+                  {% for c in compliance %}{% if c.status == 'FAIL' %}<span class="badge bg-danger ms-1" style="font-size:.6rem">!</span>{% endif %}{% endfor %}
+                {% endif %}
+              </span>
+              <i class="bi bi-chevron-up"></i>
+            </button>
+            <div class="collapse show" id="specsSection">
+              <div class="mt-2 p-2 rounded border" style="background:rgba(255,193,7,.06);border-color:#ffc107 !important">
+                <p class="text-muted small mb-2" style="font-size:.72rem">
+                  <i class="bi bi-magic me-1"></i>Auto-filled from PDF.
+                  Fields marked <span class="text-danger">✗</span> failed compliance — verify and correct manually.
+                </p>
+                {# Spec fields pre-filled from PDF extraction — edit any that are wrong or missing #}
+                <div class="row g-2">
+                  <div class="col-6">
+                    <label class="form-label mb-1 small">{{ specs_form.spec_frame_material.label }}</label>
+                    {{ specs_form.spec_frame_material }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1 small">{{ specs_form.spec_output_flange.label }}</label>
+                    {{ specs_form.spec_output_flange }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1 small">{{ specs_form.spec_shaft.label }}</label>
+                    {{ specs_form.spec_shaft }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1 small">{{ specs_form.spec_cooling_method.label }}</label>
+                    {{ specs_form.spec_cooling_method }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1 small">{{ specs_form.spec_ip_rating.label }}</label>
+                    {{ specs_form.spec_ip_rating }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1 small">{{ specs_form.spec_ambient_temp.label }}</label>
+                    {{ specs_form.spec_ambient_temp }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1 small">{{ specs_form.spec_coating.label }}</label>
+                    {{ specs_form.spec_coating }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1 small">{{ specs_form.spec_top_color.label }}</label>
+                    {{ specs_form.spec_top_color }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1 small">{{ specs_form.spec_heater.label }}</label>
+                    {{ specs_form.spec_heater }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1 small">{{ specs_form.spec_insulation_class.label }}</label>
+                    {{ specs_form.spec_insulation_class }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1 small">{{ specs_form.spec_duty_cycle.label }}</label>
+                    {{ specs_form.spec_duty_cycle }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1 small">{{ specs_form.spec_motor_certificate.label }}</label>
+                    {{ specs_form.spec_motor_certificate }}
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label mb-1 small">{{ specs_form.spec_painting.label }}</label>
+                    {{ specs_form.spec_painting }}
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label mb-1 small">{{ specs_form.spec_weight_kg.label }}</label>
+                    {{ specs_form.spec_weight_kg }}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

@@ -4,10 +4,10 @@ import tempfile
 from decimal import Decimal
 
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import DrivetrainForm, SaveCalculationForm, DatasheetUploadForm
+from .forms import DrivetrainForm, SaveCalculationForm, DatasheetUploadForm, MotorSpecsForm
 from .engine import drivetrain_sizing
 from .models import MotorCalculation
-from .pdf_parser import parse_datasheet
+from .pdf_parser import parse_datasheet, check_compliance, specs_to_form_initial
 
 # Raw strings so backslashes reach KaTeX unchanged.
 FORMULAS = {
@@ -54,15 +54,38 @@ def _load_datasheet(post_data) -> tuple:
     return None, ''
 
 
+def _spec_fields_from_form(sd: dict) -> dict:
+    """Extract all spec_ fields from cleaned form data, returning safe defaults."""
+    return {
+        'spec_frame_material':    sd.get('spec_frame_material', '') or '',
+        'spec_output_flange':     sd.get('spec_output_flange', '') or '',
+        'spec_shaft':             sd.get('spec_shaft', '') or '',
+        'spec_cooling_method':    sd.get('spec_cooling_method', '') or '',
+        'spec_ip_rating':         sd.get('spec_ip_rating', '') or '',
+        'spec_ambient_temp':      sd.get('spec_ambient_temp', '') or '',
+        'spec_coating':           sd.get('spec_coating', '') or '',
+        'spec_top_color':         sd.get('spec_top_color', '') or '',
+        'spec_heater':            sd.get('spec_heater', '') or '',
+        'spec_insulation_class':  sd.get('spec_insulation_class', '') or '',
+        'spec_duty_cycle':        sd.get('spec_duty_cycle', '') or '',
+        'spec_painting':          sd.get('spec_painting', '') or '',
+        'spec_motor_certificate': sd.get('spec_motor_certificate', '') or '',
+        'spec_weight_kg':         sd.get('spec_weight_kg'),
+    }
+
+
 def index(request):
     results = None
     save_form = SaveCalculationForm()
     form = DrivetrainForm()
+    specs_form = MotorSpecsForm()
     datasheet = None
     datasheet_json = ''
+    compliance = None
 
     if request.method == 'POST':
         form = DrivetrainForm(request.POST)
+        specs_form = MotorSpecsForm(request.POST)
         datasheet, datasheet_json = _load_datasheet(request.POST)
         if form.is_valid():
             d = form.cleaned_data
@@ -83,12 +106,17 @@ def index(request):
                 supplier_worm_ratio=d.get('supplier_worm_ratio'),
             )
 
+        if specs_form.is_valid():
+            compliance = check_compliance(specs_form.cleaned_data)
+
     return render(request, 'calculator/index.html', {
         'form': form,
+        'specs_form': specs_form,
         'save_form': save_form,
         'results': results,
         'datasheet': datasheet,
         'datasheet_json': datasheet_json,
+        'compliance': compliance,
         'active_page': 'calculator',
         **FORMULAS,
     })
@@ -110,7 +138,7 @@ def upload_datasheet(request):
 
     pdf_file = request.FILES['pdf_file']
     supplier = form.cleaned_data['supplier_name']
-    # Decimal → float so json.dumps can serialise them
+    crane_type = form.cleaned_data['crane_type']
     raw_proto  = form.cleaned_data.get('price_prototype')
     raw_series = form.cleaned_data.get('price_series')
     price_proto  = float(raw_proto)  if raw_proto  else None
@@ -133,20 +161,26 @@ def upload_datasheet(request):
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
 
+    form_initial = specs_to_form_initial(specs)
+    compliance = check_compliance(form_initial)
+
     datasheet = {
-        'supplier': supplier,
+        'supplier':        supplier,
+        'crane_type':      crane_type,
         'price_prototype': price_proto,
-        'price_series': price_series,
-        'specs': specs,
+        'price_series':    price_series,
+        'specs':           specs,
     }
     datasheet_json = json.dumps(datasheet)
 
     return render(request, 'calculator/datasheet_result.html', {
-        'datasheet': datasheet,
+        'datasheet':      datasheet,
         'datasheet_json': datasheet_json,
-        'form': DrivetrainForm(),
-        'save_form': SaveCalculationForm(),
-        'active_page': 'calculator',
+        'compliance':     compliance,
+        'form':           DrivetrainForm(),
+        'specs_form':     MotorSpecsForm(initial=form_initial),
+        'save_form':      SaveCalculationForm(initial={'crane_type': crane_type}),
+        'active_page':    'calculator',
         **FORMULAS,
     })
 
@@ -155,11 +189,13 @@ def save_calculation(request):
     if request.method != 'POST':
         return redirect('index')
 
-    calc_form = DrivetrainForm(request.POST)
-    save_form = SaveCalculationForm(request.POST)
+    calc_form  = DrivetrainForm(request.POST)
+    save_form  = SaveCalculationForm(request.POST)
+    specs_form = MotorSpecsForm(request.POST)
 
     if calc_form.is_valid() and save_form.is_valid():
-        d = calc_form.cleaned_data
+        d  = calc_form.cleaned_data
+        sd = specs_form.cleaned_data if specs_form.is_valid() else {}
         results = drivetrain_sizing(
             crane_torque_max=d['crane_torque_max'],
             crane_torque_nom=d.get('crane_torque_nom'),
@@ -176,10 +212,11 @@ def save_calculation(request):
             supplier_bevel_ratio=d.get('supplier_bevel_ratio'),
             supplier_worm_ratio=d.get('supplier_worm_ratio'),
         )
-        # Read prices from datasheet JSON if present
         ds, _ = _load_datasheet(request.POST)
         price_proto  = Decimal(str(ds['price_prototype']))  if ds and ds.get('price_prototype')  else None
         price_series = Decimal(str(ds['price_series']))     if ds and ds.get('price_series')     else None
+
+        spec_data = _spec_fields_from_form(sd)
 
         MotorCalculation.objects.create(
             supplier_name=save_form.cleaned_data['supplier_name'],
@@ -203,6 +240,7 @@ def save_calculation(request):
             torque_check=results['torque_check'],
             torque_margin=results['torque_margin'],
             motor_power_kw=results['motor_power_kw'],
+            **spec_data,
         )
         return redirect('suppliers')
 
@@ -214,14 +252,20 @@ def save_calculation(request):
             'motor_speed', 'gearbox_output_speed', 'motor_rated_torque', 'starting_factor',
         )})
 
+    compliance = None
+    if specs_form.is_valid():
+        compliance = check_compliance(specs_form.cleaned_data)
+
     datasheet, datasheet_json = _load_datasheet(request.POST)
     return render(request, 'calculator/index.html', {
-        'form': calc_form,
-        'save_form': save_form,
-        'results': results,
-        'datasheet': datasheet,
+        'form':           calc_form,
+        'specs_form':     specs_form,
+        'save_form':      save_form,
+        'results':        results,
+        'datasheet':      datasheet,
         'datasheet_json': datasheet_json,
-        'active_page': 'calculator',
+        'compliance':     compliance,
+        'active_page':    'calculator',
         **FORMULAS,
     })
 
@@ -261,4 +305,18 @@ def formulas(request):
     return render(request, 'calculator/formulas.html', {
         'active_page': 'formulas',
         **FORMULAS,
+    })
+
+
+def comparison(request):
+    crane_filter = request.GET.get('crane', None)
+    qs = MotorCalculation.objects.all()
+    if crane_filter == 'standard_pf':
+        qs = qs.filter(crane_type=MotorCalculation.STANDARD_PF)
+    elif crane_filter == 'pf_xxl':
+        qs = qs.filter(crane_type=MotorCalculation.PF_XXL)
+    return render(request, 'calculator/comparison.html', {
+        'calculations': qs,
+        'crane_filter': crane_filter,
+        'active_page': 'comparison',
     })

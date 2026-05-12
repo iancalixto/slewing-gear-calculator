@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -10,7 +11,19 @@
   <style>
     /* ── Layout ─────────────────────────────────────────────────── */
     html, body { height: 100%; margin: 0; }
-    body { background: #f0f2f5; font-size: 0.88rem; display: flex; }
+    body {
+      min-height: 100vh;
+      font-size: 0.88rem;
+      display: flex;
+      background-color: #0f1825;
+      background-image:
+        linear-gradient(rgba(10,15,30,0.78), rgba(10,15,30,0.78)),
+        url("{% static 'calculator/bg.jpg' %}");
+      background-size: cover;
+      background-position: center center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+    }
 
     #sidebar {
       width: 240px;
@@ -24,6 +37,7 @@
       align-self: flex-start;
       height: 100vh;
       overflow-y: auto;
+      box-shadow: 2px 0 8px rgba(0,0,0,.4);
     }
     #main-wrap {
       flex: 1 1 0;
@@ -96,6 +110,11 @@
     .supplier-check-row td { padding: .25rem .5rem; }
     .overall-badge { font-size: 1.1rem; padding: .4rem 1rem; }
     .django-latexify.math.block .katex-display { margin: 0; }
+
+    /* ── Compliance badge colours ───────────────────────────────── */
+    .compliance-pass { background: #198754 !important; color: #fff !important; }
+    .compliance-fail { background: #dc3545 !important; color: #fff !important; }
+    .compliance-unknown { background: #6c757d !important; color: #fff !important; }
   </style>
 </head>
 <body>
@@ -112,6 +131,16 @@
   <a href="{% url 'index' %}"
      class="sidebar-link {% if active_page == 'calculator' %}active{% endif %}">
     <i class="bi bi-calculator"></i> Calculator
+  </a>
+
+  <a href="{% url 'upload_datasheet' %}"
+     class="sidebar-link {% if active_page == 'upload' %}active{% endif %}">
+    <i class="bi bi-filetype-pdf"></i> Datasheet Import
+  </a>
+
+  <a href="{% url 'comparison' %}"
+     class="sidebar-link {% if active_page == 'comparison' %}active{% endif %}">
+    <i class="bi bi-table"></i> Motor Comparison
   </a>
 
   <a href="{% url 'formulas' %}"
@@ -154,7 +183,7 @@
   <div class="page-content">
     {% block content %}{% endblock %}
   </div>
-  <footer class="text-center text-muted py-2 small border-top bg-white">
+  <footer class="text-center text-muted py-2 small border-top" style="background:rgba(26,29,35,0.8);color:#6b7280 !important">
     Palfinger Marine — BU Wind | Drivetrain Sizing Tool
   </footer>
 </div>

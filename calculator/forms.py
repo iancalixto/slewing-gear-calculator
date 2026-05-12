@@ -2,8 +2,10 @@ from django import forms
 from .models import MotorCalculation
 
 
-FLOAT_WIDGET = {'class': 'form-control form-control-sm', 'step': 'any'}
+FLOAT_WIDGET     = {'class': 'form-control form-control-sm', 'step': 'any'}
 FLOAT_WIDGET_OPT = {'class': 'form-control form-control-sm', 'step': 'any', 'placeholder': 'optional'}
+TEXT_WIDGET      = {'class': 'form-control form-control-sm'}
+TEXT_WIDGET_OPT  = {'class': 'form-control form-control-sm', 'placeholder': 'optional'}
 
 
 class DrivetrainForm(forms.Form):
@@ -89,6 +91,67 @@ class DrivetrainForm(forms.Form):
     )
 
 
+class MotorSpecsForm(forms.Form):
+    """Motor physical specification fields for compliance checking and storage."""
+
+    spec_frame_material = forms.CharField(
+        label='Frame Material', required=False,
+        widget=forms.TextInput(attrs={**TEXT_WIDGET_OPT, 'placeholder': 'e.g. Cast Iron / GJL-250'}),
+    )
+    spec_output_flange = forms.CharField(
+        label='Output Flange', required=False,
+        widget=forms.TextInput(attrs={**TEXT_WIDGET_OPT, 'placeholder': 'e.g. Ø165 mm'}),
+    )
+    spec_shaft = forms.CharField(
+        label='Shaft', required=False,
+        widget=forms.TextInput(attrs={**TEXT_WIDGET_OPT, 'placeholder': 'e.g. Ø32k6 × 50'}),
+    )
+    spec_cooling_method = forms.CharField(
+        label='Cooling Method', required=False,
+        widget=forms.TextInput(attrs={**TEXT_WIDGET_OPT, 'placeholder': 'e.g. IC410 TENV'}),
+    )
+    spec_ip_rating = forms.CharField(
+        label='IP Rating', required=False,
+        widget=forms.TextInput(attrs={**TEXT_WIDGET_OPT, 'placeholder': 'e.g. IP66'}),
+    )
+    spec_ambient_temp = forms.CharField(
+        label='Ambient Temperature', required=False,
+        widget=forms.TextInput(attrs={**TEXT_WIDGET_OPT, 'placeholder': 'e.g. -20°C to +45°C'}),
+    )
+    spec_coating = forms.CharField(
+        label='Coating Class', required=False,
+        widget=forms.TextInput(attrs={**TEXT_WIDGET_OPT, 'placeholder': 'e.g. C5H / EN 12944-5'}),
+    )
+    spec_top_color = forms.CharField(
+        label='Top Color', required=False,
+        widget=forms.TextInput(attrs={**TEXT_WIDGET_OPT, 'placeholder': 'e.g. RAL7035'}),
+    )
+    spec_heater = forms.CharField(
+        label='Standstill Heater', required=False,
+        widget=forms.TextInput(attrs={**TEXT_WIDGET_OPT, 'placeholder': 'e.g. 24VDC'}),
+    )
+    spec_insulation_class = forms.CharField(
+        label='Insulation Class', required=False,
+        widget=forms.TextInput(attrs={**TEXT_WIDGET_OPT, 'placeholder': 'e.g. F or H'}),
+    )
+    spec_duty_cycle = forms.CharField(
+        label='Duty Cycle', required=False,
+        widget=forms.TextInput(attrs={**TEXT_WIDGET_OPT, 'placeholder': 'e.g. S3-25%'}),
+    )
+    spec_painting = forms.CharField(
+        label='Painting Description', required=False,
+        widget=forms.TextInput(attrs={**TEXT_WIDGET_OPT, 'placeholder': 'e.g. Marine C5H system, epoxy primer'}),
+    )
+    spec_motor_certificate = forms.CharField(
+        label='Motor Certificate', required=False,
+        widget=forms.TextInput(attrs={**TEXT_WIDGET_OPT, 'placeholder': 'e.g. DNV, GL, ABS'}),
+    )
+    spec_weight_kg = forms.FloatField(
+        label='Weight (kg)', required=False, min_value=0,
+        widget=forms.NumberInput(attrs={**FLOAT_WIDGET_OPT, 'placeholder': 'e.g. 45'}),
+    )
+
+
 class SaveCalculationForm(forms.Form):
     supplier_name = forms.CharField(
         max_length=200,
@@ -120,6 +183,12 @@ class DatasheetUploadForm(forms.Form):
             'class': 'form-control form-control-sm',
             'placeholder': 'e.g. Bonfiglioli, ABB, Siemens',
         }),
+    )
+    crane_type = forms.ChoiceField(
+        choices=MotorCalculation.CRANE_CHOICES,
+        label='Crane Type',
+        initial=MotorCalculation.STANDARD_PF,
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
     )
     price_prototype = forms.DecimalField(
         max_digits=10, decimal_places=2,

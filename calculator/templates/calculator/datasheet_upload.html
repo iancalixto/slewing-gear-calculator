@@ -37,6 +37,31 @@
             {% endif %}
           </div>
 
+          {# Crane type selector #}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              {{ form.crane_type.label }}
+              <span class="text-danger">*</span>
+            </label>
+            <div class="d-flex gap-3 mt-1">
+              {% for radio in form.crane_type %}
+              <div class="form-check">
+                {{ radio.tag }}
+                <label class="form-check-label fw-semibold" for="{{ radio.id_for_label }}">
+                  {% if radio.data.value == 'standard_pf' %}
+                    <i class="bi bi-crane me-1"></i>Standard PF Crane
+                  {% else %}
+                    <i class="bi bi-arrows-fullscreen me-1"></i>PF-XXL
+                  {% endif %}
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+            {% if form.crane_type.errors %}
+              <div class="text-danger small mt-1">{{ form.crane_type.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
           <p class="form-label fw-semibold mb-1">Pricing <span class="text-muted fw-normal">(optional)</span></p>
           <div class="row g-2 mb-3">
             <div class="col-6">
